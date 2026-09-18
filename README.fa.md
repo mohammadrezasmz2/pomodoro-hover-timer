@@ -4,6 +4,19 @@ Pomodoro Timing یک نرم‌افزار دسکتاپ ویندوزی مبتنی 
 لوکال کار می‌کند و تایمر پومودورو را با یادداشت روزانه، یادآور، Habit Tracker،
 فهرست کارها، نمای هفتگی و آمار/تقویم ترکیب می‌کند.
 
+## دانلود نسخهٔ ویندوز
+
+**[دانلود نسخهٔ 1.6.3 برای Windows x64](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.3/Pomodoro-Timing-1.6.3-Windows-x64.zip)**
+
+[توضیحات انتشار](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/tag/v1.6.3) · [فایل checksum از نوع SHA-256](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.3/Pomodoro-Timing-1.6.3-Windows-x64.zip.sha256)
+
+۱. فایل ZIP پرتابل را دانلود کنید و **تمام محتویات آن** را در یک پوشه استخراج کنید.
+۲. برای اجرای برنامه، `Run.bat` را باز کنید.
+۳. اجرای `Install.bat` اختیاری است؛ میان‌بر دسکتاپ و اجرای خودکار همراه ویندوز را اضافه می‌کند.
+
+نسخهٔ پرتابل Electron را همراه خود دارد و برای اجرای آن نصب Node.js یا npm لازم نیست.
+فایل‌های **Source code** در صفحهٔ انتشار برای توسعه هستند.
+
 ## امکانات
 
 - چند تایمر پومودورو با مدت، هدف، درصد پیشرفت و عنوان قابل ویرایش

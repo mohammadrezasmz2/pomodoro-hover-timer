@@ -7,6 +7,19 @@ and calendar/statistics views.
 
 > فارسی: [README.fa.md](README.fa.md)
 
+## Download for Windows
+
+**[Download v1.6.3 — Windows x64](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.3/Pomodoro-Timing-1.6.3-Windows-x64.zip)**
+
+[Release notes](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/tag/v1.6.3) · [SHA-256 checksum](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.3/Pomodoro-Timing-1.6.3-Windows-x64.zip.sha256)
+
+1. Download the portable ZIP and extract **all** its contents into a folder.
+2. Open `Run.bat` to start the app.
+3. Optionally run `Install.bat` to create Desktop and Windows Startup shortcuts.
+
+The portable package includes Electron. You do not need to install Node.js or npm
+to run it. The **Source code** archives on the release page are for development.
+
 ## Features
 
 - Multiple Pomodoro timers with editable duration, goal, progress, and task name
