@@ -1,15 +1,45 @@
+# Dependencies
 node_modules/
+
+# Build / release output
 dist/
-coverage/
+runtime/
+release/
+out/
+*.zip
+*.rar
+*.7z
+
+# Local Electron / application logs
+error.log
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment / secrets
 .env
 .env.*
 !.env.example
-data/
-pomodoro-data.json*
+*.pem
+*.key
+
+# User-generated app data (defense in depth)
+pomodoro-data.json
 pomodoro-log.txt
 notes.txt
-*.rar
-*.zip
+works.txt
+habit.txt
+
+# Editor / OS
+.vscode/
+.idea/
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+~$*

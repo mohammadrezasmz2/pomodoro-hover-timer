@@ -1,0 +1,340 @@
+:root{
+  --bg-1:#111a2b; --bg-2:#0a1120; --ink:#eef2f8; --muted:#8c99ad;
+  --card:rgba(255,255,255,.03); --line:rgba(255,255,255,.08); --track:#1b2536;
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; background:#0b1322; }
+body{ min-height:100vh;
+  color:var(--ink); font-family:"Segoe UI",Tahoma,"Vazirmatn",system-ui,sans-serif;
+  -webkit-user-select:none; user-select:none;
+}
+.wrap{ max-width:900px; margin:0 auto; padding:18px 20px 28px; }
+.s-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.s-title{ font-size:20px; font-weight:800; display:flex; align-items:center; gap:8px; }
+.tomato{ font-size:22px; }
+.s-total{ color:var(--muted); font-size:13px; }
+
+.card{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px 18px; margin-bottom:16px; }
+.card-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.card-title{ font-size:15px; font-weight:800; }
+.nav{ display:flex; align-items:center; gap:6px; }
+.nav-btn{ min-width:34px; height:32px; padding:0 10px; border:1px solid var(--line); background:rgba(255,255,255,.04); color:var(--ink); border-radius:9px; cursor:pointer; font-size:15px; font-family:inherit; }
+.nav-btn.wide{ font-size:12px; font-weight:700; }
+.nav-btn:hover{ background:rgba(255,255,255,.09); }
+
+.day-label{ color:var(--muted); font-size:13px; margin-bottom:12px; }
+
+/* bar chart */
+.chart{ position:relative; display:flex; align-items:flex-end; gap:16px; min-height:190px; padding:8px 4px 0; border-bottom:1px solid var(--line); }
+.bar-col{ display:flex; flex-direction:column; align-items:center; gap:8px; flex:0 0 auto; width:70px; }
+.bar-outer{ height:150px; display:flex; align-items:flex-end; }
+.bar{ width:40px; border-radius:8px 8px 4px 4px; background:var(--c,#37d67a); box-shadow:0 0 14px var(--g,rgba(55,214,122,.4)); transition:height .25s ease; min-height:4px; }
+.bar-count{ font-size:14px; font-weight:800; }
+.bar-name{ font-size:11px; color:var(--muted); max-width:70px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.empty{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:13px; }
+.day-sum{ margin-top:10px; font-size:13px; color:var(--muted); }
+.day-sum b{ color:var(--ink); }
+
+/* calendar */
+.cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+.cal-head{ margin-bottom:6px; }
+.cal-head div{ text-align:center; font-size:11px; color:var(--muted); padding:4px 0; }
+.cell{ aspect-ratio:1/1; border:1px solid var(--line); border-radius:10px; padding:6px; display:flex; flex-direction:column; gap:3px; background:rgba(255,255,255,.02); cursor:pointer; transition:.12s; overflow:hidden; }
+.cell.blank{ border:none; background:transparent; cursor:default; }
+.cell:not(.blank):hover{ background:rgba(255,255,255,.06); }
+.cell.today{ border-color:#5bd08a; box-shadow:0 0 0 1px rgba(91,208,138,.5) inset; }
+.cell.sel{ outline:2px solid #7cc4ff; }
+.cell .dnum{ font-size:12px; font-weight:700; color:var(--muted); }
+.cell.has .dnum{ color:var(--ink); }
+.cell .cnt{ font-size:12px; font-weight:800; margin-top:auto; }
+.dots{ display:flex; flex-wrap:wrap; gap:3px; }
+.dot{ width:7px; height:7px; border-radius:50%; }
+.cal-hint{ margin-top:10px; color:var(--muted); font-size:11px; text-align:center; }
+
+/* bilingual direction */
+body,.card,.day-label,.day-sum{ text-align:start; }
+html[dir="ltr"] .chart{ direction:ltr; }
+html[dir="rtl"] .chart{ direction:rtl; }
+
+/* habits + daily to-do history */
+.activity-block{ margin-top:14px; padding-top:13px; border-top:1px solid var(--line); }
+.activity-title{ font-size:13px; font-weight:800; margin-bottom:9px; color:#dbe4f0; }
+.activity-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; direction:ltr; }
+.activity-col{ min-width:0; border:1px solid var(--line); border-radius:11px; padding:10px; background:rgba(255,255,255,.018); }
+.activity-subtitle{ font-size:11.5px; font-weight:800; color:#aeb9c9; margin-bottom:7px; }
+.activity-list{ display:flex; flex-direction:column; gap:5px; }
+.activity-row{ display:grid; grid-template-columns:22px minmax(0,1fr) auto; align-items:center; gap:6px; min-height:30px; padding:5px 7px; border-radius:8px; background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.045); }
+.activity-status{ width:20px; height:20px; border-radius:6px; display:grid; place-items:center; font-weight:900; font-size:13px; background:rgba(255,255,255,.04); }
+.activity-row.done .activity-status{ color:#72e8a3; background:rgba(55,214,122,.12); }
+.activity-row.missed .activity-status{ color:#ff9a9a; background:rgba(255,80,80,.11); }
+.activity-row.pending .activity-status{ color:#97a4b7; }
+.activity-name{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11.5px; color:#e6ebf3; }
+.activity-state{ font-size:9px; color:var(--muted); white-space:nowrap; }
+.activity-row.done .activity-state{ color:#6cd596; }
+.activity-row.missed .activity-state{ color:#df8d8d; }
+.activity-empty{ color:var(--muted); font-size:10.5px; padding:8px 2px; line-height:1.5; }
+
+/* activity markers inside calendar cells */
+.cell.has-activity .dnum{ color:var(--ink); }
+.cal-activity{ display:flex; flex-wrap:wrap; gap:2px; margin-top:auto; direction:ltr; }
+.ca{ display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:15px; padding:0 3px; border-radius:5px; font-size:8px; font-weight:900; line-height:1; }
+.ca.done{ color:#72e8a3; background:rgba(55,214,122,.12); }
+.ca.missed{ color:#ff9999; background:rgba(255,80,80,.11); }
+.ca.todo-done{ color:#84caff; background:rgba(56,182,255,.12); }
+.ca.todo-pending{ color:#c4cbd7; background:rgba(255,255,255,.055); }
+
+@media (max-width:650px){
+  .activity-grid{ grid-template-columns:1fr; }
+}
+.ca.todo-missed{ color:#ff9999; background:rgba(255,80,80,.11); }
+.activity-text{ min-width:0; display:flex; flex-direction:column; gap:1px; }
+.activity-meta{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#77869b; font-size:8.5px; }
+
+/* ===================== v1.5.0 — light theme ===================== */
+body.theme-light{
+  --bg-1:#f8fafc; --bg-2:#e8eef6; --ink:#172033; --muted:#66758a;
+  --card:rgba(255,255,255,.72); --line:rgba(15,23,42,.12); --track:#d8e1ec;
+  background:#edf3f9;
+}
+body.theme-light .card{ box-shadow:0 8px 24px rgba(15,23,42,.06); }
+body.theme-light .nav-btn{ background:rgba(15,23,42,.035); }
+body.theme-light .nav-btn:hover{ background:rgba(15,23,42,.08); }
+body.theme-light .cell{ background:rgba(255,255,255,.64); }
+body.theme-light .cell:not(.blank):hover{ background:#fff; }
+body.theme-light .activity-title{ color:#334155; }
+body.theme-light .activity-col,
+body.theme-light .activity-row{ background:rgba(255,255,255,.55); }
+body.theme-light .activity-subtitle{ color:#64748b; }
+body.theme-light .activity-name{ color:#27364a; }
+body.theme-light .activity-status{ background:rgba(15,23,42,.04); }
+body.theme-light .cell.today{ border-color:#2ea866; box-shadow:0 0 0 1px rgba(46,168,102,.35) inset; }
+body.theme-light .cell.sel{ outline-color:#298fbd; }
+html[data-theme="light"]{ background:#edf3f9; }
+
+/* ===================== v1.6.0 — embedded statistics dock ===================== */
+body.embedded{
+  height:100vh; min-height:0; overflow:hidden; background:transparent;
+}
+body.embedded .wrap{
+  width:100%; max-width:none; height:100%; margin:0; padding:8px;
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px;
+  direction:ltr;
+}
+body.embedded .s-head{ display:none; }
+body.embedded .card{
+  min-width:0; height:100%; min-height:0; margin:0; padding:10px 11px;
+  border-radius:12px; overflow:auto; scrollbar-width:thin;
+}
+/* Daily/detail (the old upper section) stays on the RIGHT; calendar (old lower section) on the LEFT. */
+body.embedded .card:nth-of-type(1){ grid-column:2; grid-row:1; }
+body.embedded .card:nth-of-type(2){ grid-column:1; grid-row:1; }
+body.embedded .card-top{ margin-bottom:6px; }
+body.embedded .card-title{ font-size:13px; }
+body.embedded .nav{ gap:4px; }
+body.embedded .nav-btn{ min-width:28px; height:26px; padding:0 7px; font-size:13px; border-radius:7px; }
+body.embedded .nav-btn.wide{ font-size:10px; }
+body.embedded .day-label{ font-size:10.5px; margin-bottom:5px; }
+body.embedded .chart{ min-height:78px; height:78px; gap:8px; padding:2px 2px 0; }
+body.embedded .bar-col{ width:44px; gap:3px; }
+body.embedded .bar-outer{ height:48px; }
+body.embedded .bar{ width:25px; max-height:48px; }
+body.embedded .bar-count{ font-size:10px; }
+body.embedded .bar-name{ max-width:44px; font-size:8px; }
+body.embedded .empty{ font-size:10px; }
+body.embedded .day-sum{ margin-top:5px; font-size:10px; }
+body.embedded .activity-block{ margin-top:7px; padding-top:7px; }
+body.embedded .activity-title{ font-size:10.5px; margin-bottom:5px; }
+body.embedded .activity-grid{ gap:6px; }
+body.embedded .activity-col{ padding:6px; border-radius:8px; }
+body.embedded .activity-subtitle{ font-size:9px; margin-bottom:4px; }
+body.embedded .activity-list{ gap:3px; }
+body.embedded .activity-row{ min-height:24px; padding:3px 5px; grid-template-columns:18px minmax(0,1fr) auto; gap:4px; }
+body.embedded .activity-status{ width:17px; height:17px; font-size:10px; border-radius:5px; }
+body.embedded .activity-name{ font-size:9px; }
+body.embedded .activity-state{ font-size:8px; }
+body.embedded .activity-meta{ font-size:7.5px; }
+body.embedded .activity-empty{ font-size:9px; padding:4px 1px; }
+body.embedded .cal-grid{ gap:3px; }
+body.embedded .cal-head{ margin-bottom:3px; }
+body.embedded .cal-head div{ font-size:9px; padding:2px 0; }
+body.embedded .cell{ aspect-ratio:auto; min-height:31px; padding:3px; border-radius:7px; gap:1px; }
+body.embedded .cell .dnum{ font-size:9px; }
+body.embedded .cell .cnt{ font-size:8px; }
+body.embedded .dots{ gap:2px; }
+body.embedded .dot{ width:4px; height:4px; }
+body.embedded .cal-activity{ gap:1px; }
+body.embedded .ca{ min-width:15px; height:11px; padding:0 2px; font-size:6.5px; border-radius:4px; }
+body.embedded .cal-hint{ margin-top:5px; font-size:8.5px; }
+body.embedded::-webkit-scrollbar,
+body.embedded .card::-webkit-scrollbar{ width:6px; height:6px; }
+body.embedded .card::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.12); border-radius:8px; }
+body.embedded.theme-light .card::-webkit-scrollbar-thumb{ background:rgba(15,23,42,.18); }
+
+/* ===================== v1.6.1 — three-column daily detail ===================== */
+.daily-card{ min-width:0; }
+.daily-columns{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  direction:ltr;
+  min-width:0;
+}
+.daily-pane{
+  min-width:0;
+  border:1px solid var(--line);
+  border-radius:11px;
+  padding:10px;
+  background:rgba(255,255,255,.018);
+  display:flex;
+  flex-direction:column;
+}
+.daily-pane .activity-subtitle{
+  flex:0 0 auto;
+  margin-bottom:8px;
+  color:#dbe4f0;
+  font-size:12px;
+}
+.daily-pane .activity-list{
+  min-height:0;
+  overflow:auto;
+  padding-inline-end:2px;
+  scrollbar-width:thin;
+}
+.pomodoro-pane .chart{
+  width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scrollbar-width:thin;
+}
+.daily-pane::-webkit-scrollbar,
+.daily-pane .activity-list::-webkit-scrollbar,
+.pomodoro-pane .chart::-webkit-scrollbar{ width:6px; height:6px; }
+.daily-pane::-webkit-scrollbar-thumb,
+.daily-pane .activity-list::-webkit-scrollbar-thumb,
+.pomodoro-pane .chart::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.12); border-radius:8px; }
+body.theme-light .daily-pane{ background:rgba(255,255,255,.55); }
+body.theme-light .daily-pane .activity-subtitle{ color:#334155; }
+body.theme-light .daily-pane::-webkit-scrollbar-thumb,
+body.theme-light .daily-pane .activity-list::-webkit-scrollbar-thumb,
+body.theme-light .pomodoro-pane .chart::-webkit-scrollbar-thumb{ background:rgba(15,23,42,.18); }
+
+body.embedded .daily-card{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+body.embedded .daily-card .card-top,
+body.embedded .daily-card .day-label{ flex:0 0 auto; }
+body.embedded .daily-columns{
+  flex:1 1 auto;
+  min-height:0;
+  gap:6px;
+}
+body.embedded .daily-pane{
+  height:100%;
+  min-height:0;
+  padding:6px;
+  border-radius:8px;
+  overflow:hidden;
+}
+body.embedded .daily-pane .activity-subtitle{
+  font-size:9px;
+  margin-bottom:5px;
+  min-height:14px;
+}
+body.embedded .daily-pane .activity-list{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+body.embedded .pomodoro-pane .chart{
+  flex:1 1 auto;
+  min-height:0;
+  height:auto;
+  max-height:none;
+  overflow:auto;
+}
+body.embedded .pomodoro-pane .day-sum{ flex:0 0 auto; }
+body.embedded .daily-pane .activity-row{
+  grid-template-columns:18px minmax(0,1fr);
+  grid-template-areas:"status text" "status state";
+  align-items:center;
+}
+body.embedded .daily-pane .activity-status{ grid-area:status; }
+body.embedded .daily-pane .activity-text{ grid-area:text; }
+body.embedded .daily-pane .activity-state{ grid-area:state; justify-self:start; }
+
+@media (max-width:760px){
+  .daily-columns{ gap:6px; }
+  .daily-pane{ padding:7px; }
+}
+
+
+/* ===================== v1.6.2 — stable activity rows inside scroll panes ===================== */
+/* Keep activity cards at their natural height. Without this, flexbox shrinks rows when
+   the list gets long, which makes the title and status text collide. */
+.daily-pane .activity-row{
+  flex:0 0 auto;
+}
+
+body.embedded .daily-pane .activity-list{
+  align-content:flex-start;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+  padding-inline-end:5px;
+}
+body.embedded .daily-pane .activity-row{
+  flex:0 0 auto;
+  min-height:40px;
+  padding:5px 6px;
+  grid-template-columns:20px minmax(0,1fr);
+  grid-template-rows:minmax(15px,auto) 12px;
+  grid-template-areas:"status text" "status state";
+  column-gap:6px;
+  row-gap:2px;
+  align-items:center;
+}
+body.embedded .daily-pane .activity-status{
+  width:20px;
+  height:20px;
+  font-size:11px;
+  align-self:center;
+}
+body.embedded .daily-pane .activity-text{
+  min-width:0;
+  overflow:hidden;
+  gap:1px;
+}
+body.embedded .daily-pane .activity-name{
+  display:block;
+  min-width:0;
+  font-size:9.5px;
+  line-height:1.35;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+body.embedded .daily-pane .activity-meta{
+  display:block;
+  max-width:100%;
+  font-size:7.5px;
+  line-height:1.25;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+body.embedded .daily-pane .activity-state{
+  display:block;
+  min-width:0;
+  max-width:100%;
+  font-size:8px;
+  line-height:1.2;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  justify-self:stretch;
+}
+/* To-do lists can be long: never compress their rows; scroll the list instead. */
+body.embedded .todo-pane .activity-row{ min-height:40px; }
+body.embedded .habit-pane .activity-row{ min-height:42px; }

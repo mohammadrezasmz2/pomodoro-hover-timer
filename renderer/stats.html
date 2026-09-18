@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fa" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>آمار و تقویم</title>
+  <link rel="stylesheet" href="stats.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="s-head">
+      <div class="s-title"><span class="tomato">🍅</span> <span data-i18n="pageTitle">آمار و تقویم پومودورو</span></div>
+      <div class="s-total" id="allTotal">—</div>
+    </header>
+
+    <section class="card daily-card">
+      <div class="card-top">
+        <div class="card-title" data-i18n="dayOverview">جزئیات روز</div>
+        <div class="nav">
+          <button class="nav-btn" id="dayPrev">‹</button>
+          <button class="nav-btn wide" id="dayToday" data-i18n="today">امروز</button>
+          <button class="nav-btn" id="dayNext">›</button>
+        </div>
+      </div>
+      <div class="day-label" id="dayLabel">—</div>
+
+      <div class="daily-columns">
+        <section class="daily-pane pomodoro-pane">
+          <div class="activity-subtitle" data-i18n="dailyTitle">پومودوروهای روز</div>
+          <div class="chart" id="chart"><div class="empty" id="chartEmpty" data-i18n="dayEmpty">هنوز پومودورویی برای این روز ثبت نشده.</div></div>
+          <div class="day-sum" id="daySum"></div>
+        </section>
+
+        <section class="daily-pane habit-pane">
+          <div class="activity-subtitle" data-i18n="habitTracker">هبیت ترکر</div>
+          <div class="activity-list" id="habitActivity"></div>
+        </section>
+
+        <section class="daily-pane todo-pane">
+          <div class="activity-subtitle" data-i18n="todoList">فهرست کارهای روز</div>
+          <div class="activity-list" id="todoActivity"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-top">
+        <div class="card-title" id="monthTitle">تقویم</div>
+        <div class="nav">
+          <button class="nav-btn" id="monPrev">‹</button>
+          <button class="nav-btn wide" id="monThis" data-i18n="thisMonth">این ماه</button>
+          <button class="nav-btn" id="monNext">›</button>
+        </div>
+      </div>
+      <div class="cal-grid cal-head" id="calHead"></div>
+      <div class="cal-grid" id="calBody"></div>
+      <div class="cal-hint" data-i18n="hint">روی هر روز کلیک کن تا نمودار همان روز بالا نشان داده شود.</div>
+    </section>
+  </div>
+  <script src="jalali.js"></script>
+  <script src="stats.js"></script>
+</body>
+</html>

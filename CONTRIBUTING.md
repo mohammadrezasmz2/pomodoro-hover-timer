@@ -1,27 +1,53 @@
 # Contributing
 
-Thank you for helping improve Pomodoro Hover Timer.
+Thank you for contributing to Pomodoro Timing.
 
-The source upload is still pending. Development and build instructions will be
-added with the source tree.
+## Before opening a change
 
-## Bug reports
+1. Search existing issues and pull requests first.
+2. For larger behavior changes, open an issue describing the problem and proposed approach.
+3. Keep pull requests focused on one problem when practical.
 
-Please include:
+## Development setup
 
-- The app version and Windows version.
-- Display scaling and whether you use multiple monitors.
-- Steps to reproduce the issue.
-- Expected and actual behavior.
+```bash
+npm install
+npm start
+```
 
-Remove personal notes, task names, and private file paths from screenshots
-and logs before posting them.
+Windows is required to fully test tray integration, autostart, PowerShell-based
+Start-menu detection, and the release packaging flow.
 
-## Contributions
+## Checks
 
-Keep changes focused and explain the problem, resulting behavior, and validation
-in English. Preserve the Persian interface. Discuss a language-selection approach
-before translating only part of the UI.
+Run before submitting a pull request:
 
-The app is intended to work offline. Avoid introducing a runtime account
-requirement, analytics, or cloud service without discussing the change first.
+```bash
+npm run check
+```
+
+If the change affects packaging, also run on Windows:
+
+```powershell
+npm run build:windows
+```
+
+Then extract the generated ZIP and test `Install.bat`, `Run.bat`, `Restart.bat`,
+and `Uninstall.bat` in a non-production folder.
+
+## Code guidelines
+
+- Preserve `contextIsolation: true` and `nodeIntegration: false` unless a security-reviewed change requires otherwise.
+- Expose only narrowly scoped IPC methods through `preload.js`.
+- Do not add secrets, tokens, personal user data, generated logs, or packaged runtimes to the repository.
+- Prefer DOM `textContent` for user-controlled strings rather than assigning them to `innerHTML`.
+- Keep Persian and English UI strings in sync when adding visible features.
+- Update `CHANGELOG.md` for user-visible changes.
+
+## Pull requests
+
+A pull request should explain what changed, why it changed, how it was tested,
+and include screenshots for visible UI changes when possible.
+
+By submitting a contribution, you agree that your contribution is licensed
+under the repository's MIT License.

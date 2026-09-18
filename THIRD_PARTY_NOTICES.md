@@ -1,6 +1,18 @@
-MIT License
+# Third-Party Notices
 
-Copyright (c) 2026 MR.Senobari
+Pomodoro Timing is licensed under the MIT License. The project also contains or
+builds with third-party software under compatible licenses.
+
+## Jalaali JavaScript (`jalaali-js`)
+
+`renderer/jalali.js` contains a compact adaptation of the Jalaali/Gregorian
+calendar conversion algorithm used by the `jalaali-js` project.
+
+Project: https://github.com/jalaali/jalaali-js
+License: MIT
+Copyright (c) 2020 Behrang Norouzinia
+
+MIT License
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +31,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Electron / Chromium
+
+The Windows release build downloads the official Electron 31.7.7 runtime.
+Electron is MIT-licensed and its distribution contains additional Chromium and
+third-party notices. The build script intentionally preserves Electron's
+`LICENSE` and `LICENSES.chromium.html` files inside the generated runtime.
+
+Electron project: https://github.com/electron/electron

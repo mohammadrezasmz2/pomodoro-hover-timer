@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fa" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pomodoro Timing</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="panel" id="panel">
+    <header class="titlebar">
+      <div class="brand">
+        <span class="tomato">🍅</span>
+        <div class="brand-title">Pomodoro Timing</div>
+      </div>
+      <div class="header-date" id="headerDate"></div>
+      <div class="tools">
+        <button class="tool" id="remindBtn" title="یادآور" data-i18n-title="toolReminder">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        </button>
+        <button class="tool" id="statsBtn" title="آمار و تقویم" data-i18n-title="toolStats">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+        </button>
+        <button class="tool" id="gearBtn" title="تنظیمات" data-i18n-title="toolSettings">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.6v2.4M12 19v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.6 12H5M19 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg>
+        </button>
+        <button class="tool" id="pinBtn" title="سنجاق کردن (باز نگه‌داشتن)" data-i18n-title="toolPin">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 3h6l-1 6 4 4v2H6v-2l4-4-1-6z"/><path d="M12 15v6"/></svg>
+        </button>
+        <button class="tool" id="minBtn" title="مخفی کردن" data-i18n-title="toolHide">
+          <svg viewBox="0 0 24 24" stroke-width="2"><path d="M5 12h14"/></svg>
+        </button>
+        <button class="tool" id="closeBtn" title="بستن (به تری می‌رود)" data-i18n-title="toolClose">
+          <svg viewBox="0 0 24 24" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="settings-pop" id="settingsPop">
+      <div class="set-row">
+        <span data-i18n="alertOnFinish">نمایش پنجره هنگام پایان تایمر</span>
+        <label class="switch"><input type="checkbox" id="setAlert"><span class="slider"></span></label>
+      </div>
+      <div class="set-row language-row">
+        <span data-i18n="language">زبان</span>
+        <select id="languageSelect" class="language-select" aria-label="Language">
+          <option value="fa">فارسی</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <div class="set-row preference-row">
+        <span data-i18n="dateSystem">نوع تاریخ</span>
+        <select id="calendarSelect" class="language-select" aria-label="Calendar system">
+          <option value="persian" data-i18n="calendarPersian">شمسی</option>
+          <option value="gregorian" data-i18n="calendarGregorian">میلادی</option>
+          <option value="hijri" data-i18n="calendarHijri">قمری</option>
+        </select>
+      </div>
+      <div class="set-row preference-row">
+        <span data-i18n="themeLabel">تم</span>
+        <select id="themeSelect" class="language-select" aria-label="Theme">
+          <option value="dark" data-i18n="themeDark">دارک</option>
+          <option value="light" data-i18n="themeLight">روشن</option>
+        </select>
+      </div>
+      <button class="set-open" id="openDataBtn" data-i18n="openData">📁 باز کردن پوشهٔ حافظه (Documents)</button>
+      <button class="set-open" id="aboutBtn" data-i18n="aboutButton">ℹ️ درباره</button>
+      <div class="set-hint" data-i18n="shortcutHint">میان‌بر نمایش سریع: Ctrl + Alt + P</div>
+    </div>
+
+    <div class="body">
+      <aside class="side notes-col">
+        <div class="col-title" data-i18n="todayNote">یادداشت امروز</div>
+        <textarea class="note-area" id="noteToday" placeholder="امروز روی چی کار کردی؟ اینجا بنویس…" data-i18n-placeholder="notePlaceholder"></textarea>
+        <button class="ghost-btn" id="prevNotesBtn" data-i18n="previousNotes">🗒️ یادداشت‌های روزهای قبل</button>
+      </aside>
+
+      <section class="center-col">
+        <section class="timer-list" id="timerList"></section>
+        <button class="add-new" id="addBtn">
+          <span class="plus-circle"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></span>
+          <span data-i18n="addTimer">افزودن تایمر جدید</span>
+        </button>
+      </section>
+
+      <aside class="side week-col">
+        <div class="side-mode-tabs" role="tablist" aria-label="Right panel mode">
+          <button class="side-mode active" id="weekModeBtn" data-mode="week" data-i18n-title="weekModeTitle" title="نمای هفتگی">
+            <span class="side-mode-icon">▥</span><span data-i18n="weekMode">هفته</span>
+          </button>
+          <button class="side-mode" id="habitModeBtn" data-mode="habits" data-i18n-title="habitModeTitle" title="هبیت ترکر">
+            <span class="side-mode-icon">✓</span><span data-i18n="habitMode">عادت‌ها</span>
+          </button>
+          <button class="side-mode" id="todoModeBtn" data-mode="todos" data-i18n-title="todoModeTitle" title="فهرست کارهای روز">
+            <span class="side-mode-icon">☑</span><span data-i18n="todoMode">کارها</span>
+          </button>
+        </div>
+
+        <div class="side-panel-view active" id="weekView">
+          <div class="col-title" data-i18n="thisWeek">این هفته</div>
+          <div class="week-bars" id="weekBars"></div>
+          <div class="week-total" id="weekTotal"></div>
+        </div>
+
+        <div class="side-panel-view tracker-view" id="habitView">
+          <div class="tracker-head">
+            <div class="col-title" data-i18n="habitTracker">هبیت ترکر</div>
+            <div class="tracker-date-nav">
+              <button class="tracker-nav" id="habitPrev" title="Previous day">‹</button>
+              <button class="tracker-date" id="habitToday"></button>
+              <button class="tracker-nav" id="habitNext" title="Next day">›</button>
+            </div>
+          </div>
+          <form class="tracker-add tracker-add-habit" id="habitAddForm">
+            <div class="tracker-add-main">
+              <input id="habitInput" class="tracker-input" type="text" dir="auto" autocomplete="off" data-i18n-placeholder="habitPlaceholder" placeholder="عنوان عادت…" />
+              <button class="tracker-add-btn" type="submit" data-i18n-title="addHabit" title="افزودن عادت">+</button>
+            </div>
+            <label class="habit-duration-row">
+              <span data-i18n="habitDuration">مدت عادت</span>
+              <select id="habitDuration" class="habit-duration-select">
+                <option value="week" data-i18n="habitDurationWeek">۱ هفته</option>
+                <option value="month" data-i18n="habitDurationMonth">۱ ماه</option>
+                <option value="year" data-i18n="habitDurationYear">۱ سال</option>
+              </select>
+            </label>
+          </form>
+          <div class="tracker-list" id="habitList"></div>
+          <div class="tracker-legend">
+            <span class="legend-done" data-i18n="habitDoneLegend">✓ انجام شد</span>
+            <span class="legend-missed" data-i18n="habitMissedLegend">✕ انجام نشد</span>
+          </div>
+        </div>
+
+        <div class="side-panel-view tracker-view" id="todoView">
+          <div class="tracker-head">
+            <div class="col-title" data-i18n="todoList">فهرست کارهای روز</div>
+            <div class="tracker-date-nav">
+              <button class="tracker-nav" id="todoPrev" title="Previous day">‹</button>
+              <button class="tracker-date" id="todoToday"></button>
+              <button class="tracker-nav" id="todoNext" title="Next day">›</button>
+            </div>
+          </div>
+          <form class="tracker-add" id="todoAddForm">
+            <input id="todoInput" class="tracker-input" type="text" dir="auto" autocomplete="off" data-i18n-placeholder="todoPlaceholder" placeholder="کار این روز…" />
+            <button class="tracker-add-btn" type="submit" data-i18n-title="addTodo" title="افزودن کار">+</button>
+          </form>
+          <div class="tracker-list" id="todoList"></div>
+          <div class="tracker-legend todo-legend">
+            <span data-i18n="todoStatusCycle">وضعیت: خالی ← انجام شد ← انجام نشد</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <section class="stats-dock" id="statsDock" aria-hidden="true">
+      <iframe id="statsFrame" class="stats-frame" src="stats.html?embedded=1" title="Statistics & Calendar"></iframe>
+    </section>
+
+    <div class="finish-overlay" id="finishOverlay">
+      <div class="finish-card">
+        <div class="finish-emoji">🍅</div>
+        <div class="finish-title" id="finishTitle" data-i18n="pomodoroFinished">یک پومودورو تمام شد</div>
+        <div class="finish-sub" id="finishSub" data-i18n="breakTime">وقت استراحت</div>
+        <button class="finish-ok" id="finishOk" data-i18n="finishOk">OK — تمام شد، استراحت</button>
+      </div>
+    </div>
+
+    <div class="notes-overlay" id="notesOverlay">
+      <div class="notes-card">
+        <div class="notes-head">
+          <div class="notes-h-title" data-i18n="previousNotesTitle">🗒️ یادداشت‌های روزهای قبل</div>
+          <button class="notes-close" id="notesClose" data-i18n="close">بستن</button>
+        </div>
+        <div class="notes-list" id="notesList"></div>
+      </div>
+    </div>
+
+    <div class="notes-overlay" id="reminderOverlay">
+      <div class="notes-card rem-card">
+        <div class="notes-head">
+          <div class="notes-h-title" data-i18n="remindersTitle">⏰ یادآورها (تاریخ شمسی)</div>
+          <button class="notes-close" id="reminderClose" data-i18n="close">بستن</button>
+        </div>
+        <div class="rem-body">
+          <div class="rem-list-col">
+            <div class="rem-col-title" data-i18n="savedReminders">ثبت‌شده‌ها</div>
+            <div class="rem-list" id="remList"></div>
+          </div>
+          <div class="rem-form-col">
+            <div class="rem-col-title" data-i18n="setReminder">تنظیم یادآور</div>
+            <div class="rem-form">
+              <div class="rem-row">
+                <label data-i18n="dateLabel">تاریخ:</label>
+                <input type="number" id="remY" class="rem-in rem-y" title="سال" data-i18n-title="year">
+                <span>/</span>
+                <input type="number" id="remM" class="rem-in" min="1" max="12" title="ماه" data-i18n-title="month">
+                <span>/</span>
+                <input type="number" id="remD" class="rem-in" min="1" max="31" title="روز" data-i18n-title="day">
+              </div>
+              <div class="rem-row">
+                <label data-i18n="timeLabel">ساعت:</label>
+                <input type="number" id="remH" class="rem-in" min="0" max="23" title="ساعت" data-i18n-title="hour">
+                <span>:</span>
+                <input type="number" id="remMin" class="rem-in" min="0" max="59" title="دقیقه" data-i18n-title="minute">
+              </div>
+              <div class="rem-row">
+                <label data-i18n="textLabel">متن:</label>
+                <input type="text" id="remText" class="rem-text" placeholder="یادم بنداز که…" data-i18n-placeholder="reminderPlaceholder">
+              </div>
+              <div class="rem-row">
+                <label data-i18n="repeatLabel">تکرار:</label>
+                <select id="remRepeat" class="rem-in rem-sel">
+                  <option value="none" data-i18n="repeatNone">بدون تکرار</option>
+                  <option value="weekly" data-i18n="repeatWeekly">هر هفته</option>
+                  <option value="monthly" data-i18n="repeatMonthly">هر ماه</option>
+                </select>
+              </div>
+              <button class="rem-add" id="remAdd" data-i18n="addReminder">افزودن یادآور</button>
+            </div>
+          </div>
+          <div class="rem-quick-col">
+            <div class="rem-col-title" data-i18n="quickFromNow">سریع (از الان)</div>
+            <div class="rem-quick" id="remQuick"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="finish-overlay" id="alarmOverlay">
+      <div class="finish-card">
+        <div class="finish-emoji">⏰</div>
+        <div class="finish-title" id="alarmTitle" data-i18n="reminder">یادآور</div>
+        <div class="finish-sub" id="alarmSub"></div>
+        <button class="finish-ok" id="alarmOk" data-i18n="okay">باشه</button>
+      </div>
+    </div>
+
+    <div class="notes-overlay" id="aboutOverlay">
+      <div class="notes-card about-card">
+        <div class="notes-head">
+          <div class="notes-h-title" data-i18n="aboutTitle">ℹ️ درباره Pomodoro Timing</div>
+          <button class="notes-close" id="aboutClose" data-i18n="close">بستن</button>
+        </div>
+        <div class="about-body">
+          <div class="about-app">Pomodoro Timing <span class="about-version">v1.6.3</span></div>
+          <div class="about-row"><span data-i18n="developer">سازنده</span><strong>MR.Senobari</strong></div>
+          <div class="about-row"><span data-i18n="email">ایمیل</span><strong dir="ltr">mohammadrezasm2@gmail.com</strong></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <template id="rowTpl">
+    <div class="timer-row">
+      <button class="on-toggle js-run">ON</button>
+      <div class="row-title">
+        <span class="tomato">🍅</span>
+        <div class="titles">
+          <div class="title-line">
+            <span class="edit-title js-title" contenteditable="true" spellcheck="false"></span>
+            <span class="goal-chip js-goal" role="button" tabindex="0" title="هدف: چند پومودورو تا ۱۰۰٪؟ (کلیک کن و عدد بزن)" data-i18n-title="goalTitle">🍅 0/4</span>
+          </div>
+          <label class="duration-edit" title="Edit timer minutes (5–60)" data-i18n-title="durationEditTitle">
+            <input class="duration-input js-duration" type="number" min="5" max="60" step="1" inputmode="numeric" value="25" aria-label="Timer minutes">
+            <span class="duration-unit" data-i18n="durationUnit">MIN</span>
+          </label>
+        </div>
+      </div>
+      <div class="bar-block">
+        <div class="bar-caption" data-i18n="timeRemaining">زمان باقی‌مانده</div>
+        <div class="bar-wrap">
+          <div class="time js-time">25:00</div>
+          <div class="segments js-segments"></div>
+        </div>
+      </div>
+      <div class="ring js-ring" title="چرخ ماوس: یک پومودورو +/−" data-i18n-title="ringTitle">
+        <svg viewBox="0 0 120 120">
+          <circle class="ring-track" cx="60" cy="60" r="50"></circle>
+          <circle class="ring-prog js-ring-prog" cx="60" cy="60" r="50"></circle>
+        </svg>
+        <div class="ring-center">
+          <div class="pct js-pct">0%</div>
+          <div class="pct-label" data-i18n="progress">پیشرفت</div>
+        </div>
+      </div>
+      <div class="stepper">
+        <button class="step js-inc" title="یک پومودورو +" data-i18n-title="incTitle"><svg viewBox="0 0 24 24" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button class="step js-dec" title="یک پومودورو −" data-i18n-title="decTitle"><svg viewBox="0 0 24 24" stroke-width="2.4"><path d="M5 12h14"/></svg></button>
+      </div>
+      <button class="del js-del" title="حذف تایمر" data-i18n-title="deleteTimer"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
