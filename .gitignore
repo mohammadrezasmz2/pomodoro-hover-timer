@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+data/
+pomodoro-data.json*
+pomodoro-log.txt
+notes.txt
+*.rar
+*.zip
+.DS_Store
+Thumbs.db
