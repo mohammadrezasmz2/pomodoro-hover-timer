@@ -715,7 +715,11 @@ function syncSize() {
     requestAnimationFrame(() => {
       if (!isDesktop) return;
       const panel = document.getElementById('panel');
-      window.desktop.resize(Math.ceil(panel.getBoundingClientRect().height) + BODY_PAD * 2);
+      let height = Math.ceil(panel.getBoundingClientRect().height) + BODY_PAD * 2;
+      if (reminderOverlay && reminderOverlay.classList.contains('show')) height = Math.max(height, 600);
+      else if (notesOverlay && notesOverlay.classList.contains('show')) height = Math.max(height, 640);
+      else if (aboutOverlay && aboutOverlay.classList.contains('show')) height = Math.max(height, 390);
+      window.desktop.resize(height);
     });
   });
 }

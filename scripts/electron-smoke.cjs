@@ -1,5 +1,5 @@
 // Runs the real application against disposable data on a Windows CI runner.
-const {app, dialog} = require('electron');
+const {app, dialog, screen} = require('electron');
 // Never let an application error open an unattended modal on the CI desktop.
 dialog.showErrorBox = (title, message) => { console.error(title, message); app.exit(1); };
 const fs = require('node:fs');
@@ -26,7 +26,7 @@ app.on('will-quit', () => {
     assert.equal(saved.notes.today.text, 'یادداشت ذخیرهٔ سریع');
     assert.equal(errors.length, 0, errors.join('\n'));
     console.log(`PASS Electron ${process.versions.electron}: ${phase}, IPC, CSP, responsive layout and quit persistence`);
-  } catch (e) { console.error(e); process.exitCode = 1; }
+  } catch (e) { console.error(e); app.exit(1); }
 });
 app.on('browser-window-created', (_event, win) => {
   console.log('Main window created');
@@ -61,18 +61,22 @@ app.on('browser-window-created', (_event, win) => {
         await new Promise(resolve => setTimeout(resolve, 50));
         await run('pushStatsState()');
       }
-      for (const width of [1060, 800, 480]) {
+      const nativeWidth = Math.min(1060, screen.getDisplayMatching(win.getBounds()).workArea.width);
+      for (const width of [nativeWidth, 800, 480]) {
         console.log('Testing viewport:', width);
-        win.setSize(1060, 700);
-        win.webContents.setZoomFactor(1060 / width);
-        await new Promise(resolve => setTimeout(resolve, 80));
+        win.setSize(nativeWidth, 700);
+        win.webContents.setZoomFactor(nativeWidth / width);
+        await new Promise(resolve => setTimeout(resolve, 200));
         const geometry = await run("(() => { const p=document.getElementById('panel').getBoundingClientRect(); return {left:p.left,right:p.right,width:innerWidth}; })()");
         assert(geometry.left >= 0 && geometry.right <= geometry.width + 1, JSON.stringify(geometry));
         assert(Math.abs(geometry.width - width) <= 2, JSON.stringify(geometry));
         assert(await run("Array.from(document.querySelectorAll('.js-del')).every(button => button.getBoundingClientRect().right <= innerWidth)"));
       }
       win.webContents.setZoomFactor(1);
-      win.setSize(1060, 720);
+      await run('syncSize()');
+      await new Promise(resolve => setTimeout(resolve, 200));
+      assert(await run("document.getElementById('statsDock').getBoundingClientRect().height >= 150"));
+      assert(await run("document.documentElement.scrollHeight >= document.getElementById('panel').offsetHeight"));
       if (phase === 'write') {
         const output = path.join(__dirname, '..', 'test-results');
         fs.mkdirSync(output, {recursive: true});
