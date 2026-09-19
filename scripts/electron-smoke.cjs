@@ -1,11 +1,14 @@
 // Runs the real application against disposable data on a Windows CI runner.
-const {app} = require('electron');
+const {app, dialog} = require('electron');
+// Never let an application error open an unattended modal on the CI desktop.
+dialog.showErrorBox = (title, message) => { console.error(title, message); app.exit(1); };
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const root = process.env.POMODORO_SMOKE_DATA;
 if (!root) throw new Error('Use npm run test:electron to create isolated test data');
 const phase = process.env.POMODORO_SMOKE_PHASE;
+console.log('Starting Electron smoke phase:', phase);
 const documents = path.join(root, 'documents');
 const userData = path.join(root, 'userData');
 fs.mkdirSync(documents, {recursive: true}); fs.mkdirSync(userData, {recursive: true});
@@ -26,11 +29,13 @@ app.on('will-quit', () => {
   } catch (e) { console.error(e); process.exitCode = 1; }
 });
 app.on('browser-window-created', (_event, win) => {
+  console.log('Main window created');
   win.webContents.on('console-message', details => {
     const message = details.message || '';
     if (/Uncaught|Refused to .*Content Security Policy/i.test(message)) errors.push(message);
   });
   win.webContents.once('did-finish-load', async () => {
+    console.log('Renderer loaded');
     try {
       const run = code => win.webContents.executeJavaScript(code, true);
       for (let tries = 0; !await run('typeof stateReady !== "undefined" && stateReady'); tries++) {
@@ -38,6 +43,7 @@ app.on('browser-window-created', (_event, win) => {
         await new Promise(resolve => setTimeout(resolve, 50));
       }
       assert.equal(process.versions.electron, require('../package.json').devDependencies.electron);
+      console.log('State restored');
       assert.equal(await run('typeof window.desktop.loadData'), 'function');
       assert.equal(await run('typeof require'), 'undefined');
       assert.equal(await run('typeof window.desktop.onReveal(() => {})'), 'function');
@@ -48,6 +54,7 @@ app.on('browser-window-created', (_event, win) => {
       }
       await run("state.settings.language='en'; state.settings.theme='light'; refreshLocalizedUI(); document.getElementById('statsBtn').click();");
       assert.equal(await run('statsDockOpen'), true);
+      console.log('Statistics dock opened');
       await run("pushStatsState();");
       for (let tries = 0; !await run("!!document.getElementById('statsFrame').contentDocument?.body.classList.contains('theme-light')"); tries++) {
         if (tries > 40) throw new Error('Statistics iframe did not receive the parent state');
@@ -55,6 +62,7 @@ app.on('browser-window-created', (_event, win) => {
         await run('pushStatsState()');
       }
       for (const width of [1060, 800, 480]) {
+        console.log('Testing viewport:', width);
         win.setSize(1060, 700);
         win.webContents.setZoomFactor(1060 / width);
         await new Promise(resolve => setTimeout(resolve, 80));
@@ -78,6 +86,7 @@ app.on('browser-window-created', (_event, win) => {
       // Trigger input rather than blur; then quit before the 700ms debounce.
       await run("(() => { const title=document.querySelector('.js-title'); title.textContent='Smoke title saved immediately'; title.dispatchEvent(new Event('input')); const note=document.getElementById('noteToday'); note.value='یادداشت ذخیرهٔ سریع'; note.dispatchEvent(new Event('input')); })()");
       assertionsFinished = true;
+      console.log('Requesting immediate quit');
       await run('window.desktop.quit()');
     } catch (e) { console.error(e); console.error(errors.join('\n')); app.exit(1); }
   });

@@ -52,6 +52,7 @@ test('delayed callbacks and sleep count the full elapsed interval', () => {
   assert.equal(core.advanceTimer(timer, 61000), false);
   assert.equal(timer.remainingSec, 60);
   assert.equal(core.advanceTimer(timer, 121000), true);
+  assert.equal(timer.completedAt, 121000);
   assert.equal(core.advanceTimer(timer, 181000), false);
   assert.equal(timer.running, false);
 });

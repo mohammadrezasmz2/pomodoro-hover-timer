@@ -323,7 +323,7 @@ function pad2(n) { return String(n).padStart(2, '0'); }
 function dateKey(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
 function recordCompletion(t) {
   if (!Array.isArray(state.history)) state.history = [];
-  const d = new Date();
+  const d = new Date(Number.isFinite(t.completedAt) ? t.completedAt : Date.now());
   const durationMin = Math.max(5, Math.min(60, Math.round((Number(t.durationSec) || 1500) / 60)));
   state.history.push({ date: dateKey(d), ts: d.getTime(), title: t.title, color: t.color, durationMin });
 }

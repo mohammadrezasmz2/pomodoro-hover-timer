@@ -23,6 +23,7 @@
   function startTimer(timer, now = Date.now()) {
     if (!(timer.remainingSec > 0)) timer.remainingSec = timer.durationSec;
     timer.deadlineAt = now + timer.remainingSec * 1000;
+    timer.completedAt = null;
     timer.running = true;
   }
   // Wall-clock deadlines include sleep and time while the app is closed.
@@ -32,6 +33,7 @@
     if (!Number.isFinite(timer.deadlineAt)) timer.deadlineAt = now + timer.remainingSec * 1000;
     timer.remainingSec = Math.max(0, Math.min(timer.remainingSec, Math.ceil((timer.deadlineAt - now) / 1000)));
     if (timer.remainingSec > 0) return false;
+    timer.completedAt = timer.deadlineAt;
     timer.running = false;
     timer.deadlineAt = null;
     timer.remainingSec = timer.durationSec;

@@ -1,16 +1,29 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const {spawnSync} = require('node:child_process');
+const {spawn, spawnSync} = require('node:child_process');
 const base = path.join(__dirname, '..', '.test-tmp');
 fs.mkdirSync(base, {recursive: true});
 const data = fs.mkdtempSync(path.join(base, 'electron-'));
-try {
-  for (const phase of ['write', 'restore']) {
-    const result = spawnSync(require('electron'), [path.join(__dirname, 'electron-smoke.cjs')], {
+async function run(phase) {
+  await new Promise((resolve, reject) => {
+    const child = spawn(require('electron'), [path.join(__dirname, 'electron-smoke.cjs')], {
       env: {...process.env, POMODORO_SMOKE_DATA: data, POMODORO_SMOKE_PHASE: phase},
-      timeout: 45000, encoding: 'utf8', windowsHide: true,
+      stdio: 'inherit', windowsHide: true,
     });
-    process.stdout.write(result.stdout || ''); process.stderr.write(result.stderr || '');
-    if (result.error || result.status !== 0) throw result.error || new Error(`Electron ${phase} failed: ${result.status}`);
-  }
-} finally { fs.rmSync(data, {recursive: true, force: true}); }
+    const timer = setTimeout(() => {
+      console.error('Electron smoke timeout:', phase);
+      if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], {stdio: 'inherit'});
+      else child.kill('SIGKILL');
+      reject(new Error('Electron smoke timed out'));
+    }, 40000);
+    child.on('error', error => {clearTimeout(timer); reject(error);});
+    child.on('exit', code => {
+      clearTimeout(timer);
+      if (code === 0) resolve(); else reject(new Error(`Electron ${phase} failed: ${code}`));
+    });
+  });
+}
+(async () => {
+  try { for (const phase of ['write', 'restore']) await run(phase); }
+  finally { fs.rmSync(data, {recursive: true, force: true, maxRetries: 5, retryDelay: 200}); }
+})().catch(error => { console.error(error); process.exitCode = 1; });
