@@ -1,21 +1,23 @@
 {
   "name": "pomodoro-hover-timer",
   "productName": "Pomodoro Timing",
-  "version": "1.6.3",
+  "version": "1.6.4",
   "description": "Offline Windows desktop Pomodoro timer with notes, reminders, habit tracking, daily tasks, and calendar/statistics views.",
   "main": "main.js",
   "author": "MR.Senobari",
   "license": "MIT",
   "private": true,
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "start": "electron .",
     "check": "node scripts/check.js",
+    "test": "node --test test/*.test.cjs",
+    "test:electron": "node scripts/run-electron-smoke.cjs",
     "build:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-portable.ps1"
   },
   "devDependencies": {
-    "electron": "31.7.7"
+    "electron": "44.4.3"
   }
 }

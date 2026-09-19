@@ -3,7 +3,7 @@
 // desktop. Hidden by default. Reveals when:
 //   1) the mouse touches the top-center edge of the screen,
 //   2) the Windows Start menu / Search opens (mouse click on Start OR the
-//      keyboard Windows key — both are detected via active-win), or
+//      keyboard Windows key — detected by the offline PowerShell watcher), or
 //   3) the Ctrl+Alt+P global shortcut is pressed.
 // Hides again when the mouse leaves, unless pinned or "held" open (e.g. a timer
 // just finished and is waiting for the user to acknowledge it).
@@ -12,7 +12,25 @@ const { app, BrowserWindow, screen, ipcMain, Tray, Menu, nativeImage, globalShor
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
-let startWatcher = null;
+const { pathToFileURL } = require('node:url');
+const { createStateStore, atomicWrite } = require('./lib/state-store');
+const { panelBounds, inHoverZone } = require('./lib/window-layout');
+const { trustedSender, validPayload } = require('./lib/ipc-policy');
+const { chooseState } = require('./renderer/core');
+const PANEL_URL = pathToFileURL(path.join(__dirname, 'renderer', 'index.html')).href;
+const STATS_URL = pathToFileURL(path.join(__dirname, 'renderer', 'stats.html')).href;
+// Only the main panel gets privileged IPC. The statistics iframe uses postMessage.
+function onPanel(channel, listener) {
+  ipcMain.on(channel, (event, ...args) => {
+    if (trustedSender(event, win, PANEL_URL)) listener(event, ...args);
+  });
+}
+function handlePanel(channel, listener) {
+  ipcMain.handle(channel, (event, ...args) => {
+    if (!trustedSender(event, win, PANEL_URL)) throw new Error('Untrusted IPC sender');
+    return listener(event, ...args);
+  });
+}
 
 // --- crash / error logging (writes error.log next to the app) ------------
 const LOG_FILE = path.join(__dirname, 'error.log');
@@ -30,6 +48,7 @@ let win = null;
 let tray = null;
 let watchProc = null;
 let latestState = null;
+let stateStore = null;
 
 // --- file-based memory (Documents\Pomodoro Timing) -----------------------
 // The app's data is saved to disk so it survives restarts and is accessible to
@@ -43,10 +62,11 @@ function initDataPaths() {
   MEM_NOTES = path.join(DATA_DIR, 'notes.txt');
   MEM_WORKS = path.join(DATA_DIR, 'works.txt');
   MEM_HABIT = path.join(DATA_DIR, 'habit.txt');
+  stateStore = createStateStore(MEM_JSON);
   try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (e) { logError('mkdir-data', e); }
 }
 function readMemory() {
-  try { return JSON.parse(fs.readFileSync(MEM_JSON, 'utf8')); } catch (_) { return null; }
+  return stateStore ? stateStore.load() : null;
 }
 function fmtClock(sec) {
   sec = Math.max(0, Math.round(sec || 0));
@@ -192,19 +212,31 @@ function buildNotes(s) {
   return L.join('\r\n');
 }
 let writeTimer = null;
+let storageFailed = false;
+function storageStatus(ok) {
+  storageFailed = !ok;
+  if (win && !win.isDestroyed()) win.webContents.send('storage-status', ok);
+}
+function flushMemory() {
+  if (writeTimer) { clearTimeout(writeTimer); writeTimer = null; }
+  if (!latestState || !stateStore) return true;
+  try {
+    stateStore.save(latestState);
+    storageStatus(true);
+  } catch (e) {
+    logError('writeMemory', e);
+    storageStatus(false);
+    return false;
+  }
+  // JSON is authoritative; readable exports can be regenerated from it.
+  for (const [file, build] of [[MEM_LOG, buildLog], [MEM_NOTES, buildNotes], [MEM_WORKS, buildWorks], [MEM_HABIT, buildHabit]]) {
+    try { atomicWrite(file, build(latestState)); } catch (e) { logError('writeExport', e); }
+  }
+  return true;
+}
 function scheduleWrite() {
   if (writeTimer) return;
-  writeTimer = setTimeout(() => {
-    writeTimer = null;
-    if (!latestState) return;
-    try {
-      fs.writeFileSync(MEM_JSON, JSON.stringify(latestState, null, 2), 'utf8');
-      fs.writeFileSync(MEM_LOG, buildLog(latestState), 'utf8');
-      fs.writeFileSync(MEM_NOTES, buildNotes(latestState), 'utf8');
-      fs.writeFileSync(MEM_WORKS, buildWorks(latestState), 'utf8');
-      fs.writeFileSync(MEM_HABIT, buildHabit(latestState), 'utf8');
-    } catch (e) { logError('writeMemory', e); }
-  }, 700);
+  writeTimer = setTimeout(flushMemory, 700);
 }
 
 // --- runtime state -------------------------------------------------------
@@ -220,19 +252,19 @@ let quitting = false;
 // --- layout --------------------------------------------------------------
 const WIN_W = 1060;             // wide enough for notes + timers + weekly columns
 let curH = 430;                // starting height; the renderer resizes to fit
-const HOTZONE_HALF_W = 220;
-const HOTZONE_Y = 4;
 const HIDE_DELAY = 650;
 const GRACE = 3200;
 
-function workArea() { return screen.getPrimaryDisplay().workArea; }
+let activeDisplayId = null;
+let hoverLatched = false;
+let concealGeneration = 0;
+function activeDisplay() {
+  return screen.getAllDisplays().find(d => d.id === activeDisplayId) || screen.getPrimaryDisplay();
+}
+function workArea() { return activeDisplay().workArea; }
 
 function targetBounds() {
-  const wa = workArea();
-  const h = Math.min(curH, wa.height - 8);
-  const x = Math.round(wa.x + (wa.width - WIN_W) / 2);
-  const y = wa.y;
-  return { x, y, width: WIN_W, height: h };
+  return panelBounds(workArea(), curH, WIN_W);
 }
 
 function createWindow() {
@@ -255,37 +287,56 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: true,
       backgroundThrottling: false,   // keep timers ticking while hidden
     },
   });
   win.setAlwaysOnTop(true, 'screen-saver');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  win.webContents.on('will-navigate', event => event.preventDefault());
+  win.webContents.on('will-frame-navigate', event => {
+    const url = event.url;
+    if (url !== PANEL_URL && url !== STATS_URL + '?embedded=1') event.preventDefault();
+  });
+  win.webContents.session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
+  win.webContents.session.setPermissionCheckHandler(() => false);
+  win.webContents.on('will-attach-webview', event => event.preventDefault());
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  win.on('query-session-end', () => flushMemory());
+  win.on('session-end', () => flushMemory());
   win.on('closed', () => { win = null; });
 }
 
 // --- show / hide ---------------------------------------------------------
-function reveal(fromTrigger = false, focus = false) {
+function reveal(fromTrigger = false, focus = false, display = null) {
   if (!win) return;
+  if (!visible) activeDisplayId = (display || screen.getDisplayNearestPoint(screen.getCursorScreenPoint())).id;
+  concealGeneration++;
   win.setBounds(targetBounds());
   if (!visible) {
     visible = true;
     if (focus) { win.show(); win.focus(); } else { win.showInactive(); }
     win.setAlwaysOnTop(true, 'screen-saver');
-    win.webContents.send('reveal');
   } else if (focus) {
     win.show(); win.focus();
   }
+  win.webContents.send('reveal');
   if (fromTrigger) forceVisibleUntil = Date.now() + GRACE;
   cancelHide();
 }
 
 function conceal() {
   if (!win || !visible || holdOpen) return;
-  win.webContents.send('conceal');
+  win.webContents.send('conceal', ++concealGeneration);
 }
 
-ipcMain.on('conceal-done', () => { if (win) win.hide(); visible = false; });
+onPanel('conceal-done', (_e, generation) => {
+  if (generation !== concealGeneration) return;
+  if (win) win.hide();
+  visible = false;
+  pointerInside = false;
+});
 
 function scheduleHide() {
   if (hideTimer) return;
@@ -295,21 +346,25 @@ function cancelHide() { if (hideTimer) { clearTimeout(hideTimer); hideTimer = nu
 
 function toggle() { if (visible) conceal(); else reveal(true); }
 
-// --- cursor polling (top-center hot zone) --------------------------------
-// --- keep-open / auto-hide loop (NO hover-reveal) ------------------------
-// The panel is revealed only by: the Start menu opening, the tray icon,
-// Ctrl+Alt+P, or the tray menu. This loop only decides when to hide it again.
+// Top-edge hover works on every monitor. Re-enter the zone to reveal again.
 function startPolling() {
   setInterval(() => {
-    if (!win || !visible) return;
+    if (!win || quitting) return;
+    const point = screen.getCursorScreenPoint();
+    const display = screen.getDisplayNearestPoint(point);
+    const inZone = inHoverZone(point, display);
+    if (!inZone) hoverLatched = false;
+    if (!visible) {
+      if (inZone && !hoverLatched) { hoverLatched = true; reveal(true, false, display); }
+      return;
+    }
     const forced = Date.now() < forceVisibleUntil;
     if (pinned || holdOpen || pointerInside || editing || forced) cancelHide();
     else scheduleHide();
   }, 110);
 }
 
-// --- (Start-menu detection removed in the offline build) -----------------
-// Use the top-center hover zone or the Ctrl+Alt+P shortcut to reveal the panel.
+// Offline Start-menu detection, alongside hover/tray/shortcut access.
 function setupStartWatch() {
   try {
     watchProc = spawn(
@@ -363,55 +418,84 @@ function openStatsWindow() {
   reveal(true, true);
   win.webContents.send('toggle-stats-dock');
 }
-ipcMain.on('open-stats', openStatsWindow);
-ipcMain.on('sync-state', (_e, s) => {
-  latestState = s;
+onPanel('open-stats', openStatsWindow);
+onPanel('sync-state', (_e, s) => {
+  if (!validPayload(s)) { storageStatus(false); return; }
+  latestState = chooseState(s, latestState);
   scheduleWrite();
   updateTrayMenu();
 });
-ipcMain.handle('get-state', () => latestState);
+handlePanel('get-state', () => latestState);
 
 // file-based memory handlers (use the single DATA_DIR/MEM_JSON defined above)
-ipcMain.handle('load-data', () => readMemory());
+handlePanel('load-data', () => readMemory());
+handlePanel('storage-status', () => !storageFailed);
 function openDataDir() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); shell.openPath(DATA_DIR); } catch (e) { logError('open-data', e); } }
-ipcMain.on('open-data-folder', () => openDataDir());
+onPanel('open-data-folder', () => openDataDir());
 
 // --- IPC -----------------------------------------------------------------
-ipcMain.on('pointer-inside', (_e, v) => { pointerInside = !!v; if (pointerInside) cancelHide(); });
-ipcMain.on('editing', (_e, v) => { editing = !!v; if (editing) cancelHide(); });
-ipcMain.on('set-pinned', (_e, v) => { pinned = !!v; if (pinned) cancelHide(); });
-ipcMain.on('set-hold', (_e, v) => { holdOpen = !!v; if (holdOpen) { reveal(true, true); cancelHide(); } });
-ipcMain.on('hide-window', () => conceal());
-ipcMain.on('minimize-window', () => conceal());
-ipcMain.on('quit-app', () => quitApp());
-ipcMain.on('resize', (_e, h) => {
-  if (!win || !h) return;
+onPanel('pointer-inside', (_e, v) => { if (typeof v !== 'boolean') return; pointerInside = v; if (pointerInside) cancelHide(); });
+onPanel('editing', (_e, v) => { if (typeof v !== 'boolean') return; editing = v; if (editing) cancelHide(); });
+onPanel('set-pinned', (_e, v) => { if (typeof v !== 'boolean') return; pinned = v; if (pinned) cancelHide(); });
+onPanel('set-hold', (_e, v) => { if (typeof v !== 'boolean') return; holdOpen = v; if (holdOpen) { reveal(true, true); cancelHide(); } });
+onPanel('hide-window', () => conceal());
+onPanel('minimize-window', () => conceal());
+onPanel('quit-app', () => quitApp());
+onPanel('resize', (_e, h) => {
+  if (!win || !Number.isFinite(h) || h <= 0) return;
   const wa = workArea();
   curH = Math.max(140, Math.min(Math.round(h), wa.height - 8));
   win.setBounds(targetBounds());
 });
-ipcMain.handle('get-autostart', () => app.getLoginItemSettings().openAtLogin);
-ipcMain.handle('get-work-area', () => { const wa = workArea(); return { width: wa.width, height: wa.height }; });
-ipcMain.on('set-autostart', (_e, v) => app.setLoginItemSettings({ openAtLogin: !!v, path: process.execPath }));
+handlePanel('get-work-area', () => { const wa = workArea(); return { width: wa.width, height: wa.height }; });
 
-function quitApp() {
+let quitRequested = false;
+let finalizingQuit = false;
+let quitTimer = null;
+let restartRequested = false;
+function finishQuit() {
+  if (quitTimer) { clearTimeout(quitTimer); quitTimer = null; }
+  if (!flushMemory()) {
+    quitRequested = false;
+    restartRequested = false;
+    reveal(true, true);
+    dialog.showErrorBox('Pomodoro Timing', currentLanguage() === 'fa'
+      ? 'ذخیرهٔ اطلاعات انجام نشد. برنامه باز می‌ماند؛ فضای دیسک و دسترسی پوشهٔ حافظه را بررسی کنید.'
+      : 'Your changes could not be saved. The app will stay open. Check disk space and access to the data folder.');
+    return;
+  }
+  finalizingQuit = true;
   quitting = true;
-  app.isQuitting = true;
-  try { globalShortcut.unregisterAll(); } catch (_) {}
-  try { if (watchProc) { watchProc.kill(); watchProc = null; } } catch (_) {}
-  try { if (tray) { tray.destroy(); tray = null; } } catch (_) {}
-  try { if (win) { win.destroy(); win = null; } } catch (_) {}
+  if (restartRequested) app.relaunch();
   app.quit();
-  setTimeout(() => app.exit(0), 300); // ensure the process (and its file locks) fully exits
+}
+onPanel('quit-ready', (_e, state) => {
+  if (!quitRequested || !validPayload(state)) return;
+  latestState = chooseState(state, latestState);
+  finishQuit();
+});
+function quitApp() {
+  if (quitRequested || finalizingQuit) return;
+  quitRequested = true;
+  if (!win || win.isDestroyed() || win.webContents.isLoadingMainFrame()) { finishQuit(); return; }
+  quitTimer = setTimeout(finishQuit, 1500);
+  win.webContents.send('prepare-quit');
 }
 
 // --- lifecycle -----------------------------------------------------------
 const gotLock = app.requestSingleInstanceLock();
-if (!gotLock) {
+if (!gotLock || process.argv.includes('--quit')) {
   app.quit();
 } else {
-  app.on('second-instance', () => reveal(true));
-  app.on('before-quit', () => { quitting = true; });
+  app.on('second-instance', (_event, argv) => {
+    if (argv.includes('--restart') || argv.includes('--quit')) {
+      restartRequested = argv.includes('--restart'); quitApp();
+    } else reveal(true);
+  });
+  app.on('before-quit', event => {
+    if (!finalizingQuit) { event.preventDefault(); quitApp(); }
+    else flushMemory();
+  });
   app.whenReady().then(() => {
     initDataPaths();
     latestState = readMemory();      // load saved memory so the panel can restore from it
@@ -419,8 +503,17 @@ if (!gotLock) {
     createTray();
     startPolling();
     setupStartWatch();
+    const fitDisplay = () => {
+      if (win) { win.setBounds(targetBounds()); win.webContents.send('work-area-changed'); }
+    };
+    screen.on('display-metrics-changed', fitDisplay);
+    screen.on('display-removed', fitDisplay);
     try { globalShortcut.register('Control+Alt+P', toggle); } catch (_) {}
   });
-  app.on('will-quit', () => { try { globalShortcut.unregisterAll(); } catch (_) {} });
-  app.on('window-all-closed', (e) => { if (!quitting) e.preventDefault(); }); // stay in tray
+  app.on('will-quit', () => {
+    quitting = true;
+    try { globalShortcut.unregisterAll(); } catch (_) {}
+    try { if (watchProc) { watchProc.kill(); watchProc = null; } } catch (_) {}
+  });
+  app.on('window-all-closed', () => {}); // stay in tray until explicit quit
 }

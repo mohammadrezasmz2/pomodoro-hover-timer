@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+.test-tmp/
+test-results/
 
 # Build / release output
 dist/

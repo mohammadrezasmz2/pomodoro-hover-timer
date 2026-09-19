@@ -164,6 +164,10 @@ async function boot() {
   updateFromState(initial);
   if (window.desktop && window.desktop.onStateUpdate) window.desktop.onStateUpdate((st) => { updateFromState(st); renderAll(); });
   window.addEventListener('message', (ev) => {
+    if (window.parent === window || ev.source !== window.parent) return;
+    // file: messages have an opaque origin in Chromium. The exact parent
+    // WindowProxy is the trust boundary; web previews also require same-origin.
+    if (window.location.protocol !== 'file:' && ev.origin !== window.location.origin) return;
     const msg = ev && ev.data;
     if (!msg) return;
     if (msg.type === 'pomodoro-state' && msg.state) {

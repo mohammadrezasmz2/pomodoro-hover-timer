@@ -1,27 +1,33 @@
-// preload.js — safe bridge between the renderer and the main process
-const { contextBridge, ipcRenderer } = require('electron');
-
+// Only named operations cross the isolated, sandboxed bridge.
+const {contextBridge, ipcRenderer} = require('electron');
+function subscribe(channel, callback) {
+  if (typeof callback !== 'function') throw new TypeError('Expected a callback');
+  const listener = (_event, ...args) => callback(...args);
+  ipcRenderer.on(channel, listener);
+  return () => { ipcRenderer.removeListener(channel, listener); };
+}
 contextBridge.exposeInMainWorld('desktop', {
-  onReveal:  (cb) => ipcRenderer.on('reveal', cb),
-  onConceal: (cb) => ipcRenderer.on('conceal', cb),
-  concealDone: () => ipcRenderer.send('conceal-done'),
-  pointerInside: (v) => ipcRenderer.send('pointer-inside', v),
-  editing:  (v) => ipcRenderer.send('editing', v),
-  setPinned:(v) => ipcRenderer.send('set-pinned', v),
-  setHold:  (v) => ipcRenderer.send('set-hold', v),
-  resize:   (h) => ipcRenderer.send('resize', h),
-  hide:     () => ipcRenderer.send('hide-window'),
+  onReveal: cb => subscribe('reveal', cb),
+  onConceal: cb => subscribe('conceal', cb),
+  concealDone: generation => ipcRenderer.send('conceal-done', generation),
+  pointerInside: value => ipcRenderer.send('pointer-inside', value),
+  editing: value => ipcRenderer.send('editing', value),
+  setPinned: value => ipcRenderer.send('set-pinned', value),
+  setHold: value => ipcRenderer.send('set-hold', value),
+  resize: height => ipcRenderer.send('resize', height),
+  hide: () => ipcRenderer.send('hide-window'),
   minimize: () => ipcRenderer.send('minimize-window'),
-  quit:     () => ipcRenderer.send('quit-app'),
-  getAutostart: () => ipcRenderer.invoke('get-autostart'),
+  quit: () => ipcRenderer.send('quit-app'),
   getWorkArea: () => ipcRenderer.invoke('get-work-area'),
-  setAutostart: (v) => ipcRenderer.send('set-autostart', v),
+  onWorkAreaChanged: cb => subscribe('work-area-changed', cb),
   openStats: () => ipcRenderer.send('open-stats'),
-  onToggleStatsDock: (cb) => ipcRenderer.on('toggle-stats-dock', cb),
-  syncState: (s) => ipcRenderer.send('sync-state', s),
+  onToggleStatsDock: cb => subscribe('toggle-stats-dock', cb),
+  syncState: state => ipcRenderer.send('sync-state', state),
   getState: () => ipcRenderer.invoke('get-state'),
-  onStateUpdate: (cb) => ipcRenderer.on('state-update', (_e, s) => cb(s)),
   loadData: () => ipcRenderer.invoke('load-data'),
-  saveData: (jsonText) => ipcRenderer.send('save-data', jsonText),
+  onPrepareQuit: cb => subscribe('prepare-quit', cb),
+  quitReady: state => ipcRenderer.send('quit-ready', state),
+  onStorageStatus: cb => subscribe('storage-status', cb),
+  getStorageStatus: () => ipcRenderer.invoke('storage-status'),
   openDataFolder: () => ipcRenderer.send('open-data-folder'),
 });

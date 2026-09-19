@@ -3,7 +3,7 @@ title Pomodoro Timing - Uninstall
 cd /d "%~dp0"
 
 echo Closing the app if running...
-taskkill /IM "Pomodoro Timing.exe" /F >nul 2>nul
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0_launch.ps1" -Action Quit
 
 echo Removing Desktop + Startup shortcuts...
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0_rmshortcuts.ps1"

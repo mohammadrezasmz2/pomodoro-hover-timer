@@ -20,7 +20,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0_mkshortcuts.ps1"
 
 echo.
 echo Starting the app in the background...
-powershell -NoProfile -Command "Start-Process -FilePath '%~dp0runtime\Pomodoro Timing.exe'"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0_launch.ps1" -Action Run
 
 echo.
 echo ============================================

@@ -17,7 +17,7 @@ Git معمولی مسدود می‌کند و برای فایل‌های باین
 ```bash
 git init
 git add .
-git commit -m "Open-source release v1.6.3"
+git commit -m "Open-source release v1.6.4"
 git branch -M main
 git remote add origin https://github.com/YOUR-USERNAME/pomodoro-hover-timer.git
 git push -u origin main
@@ -44,8 +44,8 @@ Issue/PR templates در این بسته قرار داده شده‌اند.
 Tag نسخه را Push کنید:
 
 ```bash
-git tag v1.6.3
-git push origin v1.6.3
+git tag v1.6.4
+git push origin v1.6.4
 ```
 
 Workflow فایل `.github/workflows/windows-release.yml` روی runner ویندوز اجرا می‌شود،
@@ -58,5 +58,5 @@ GitHub Release قرار می‌دهد.
 - مالکیت/مجوز تمام آیکن‌ها و assetهای تصویری را تأیید کنید.
 - در صورت انتشار گسترده، برای کاهش هشدار SmartScreen امضای دیجیتال Windows را
   در نظر بگیرید.
-- نسخه‌ی Electron 31.7.7 برای تطبیق با Build فعلی ثابت شده است؛ ارتقا به نسخه‌ی
+- نسخهٔ Electron از package.json خوانده می‌شود و باید با lockfile یکسان باشد؛ ارتقا به نسخهٔ
   جدیدتر باید جداگانه تست شود.

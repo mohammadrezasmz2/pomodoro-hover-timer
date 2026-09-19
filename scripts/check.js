@@ -9,6 +9,12 @@ const required = [
   '_startwatch.ps1',
   'renderer/index.html',
   'renderer/app.js',
+  'renderer/core.js',
+  'lib/state-store.js',
+  'lib/window-layout.js',
+  'lib/ipc-policy.js',
+  'package-lock.json',
+  'packaging/windows/_launch.ps1',
   'renderer/styles.css',
   'renderer/jalali.js',
   'renderer/stats.html',
@@ -27,7 +33,9 @@ const jsFiles = [
   'preload.js',
   'renderer/app.js',
   'renderer/jalali.js',
-  'renderer/stats.js'
+  'renderer/stats.js',
+  'renderer/core.js', 'lib/state-store.js', 'lib/window-layout.js', 'lib/ipc-policy.js',
+  'scripts/run-electron-smoke.cjs', 'scripts/electron-smoke.cjs'
 ];
 
 let failed = false;
@@ -53,6 +61,10 @@ for (const rel of jsFiles) {
 }
 
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+const lock = JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json'), 'utf8'));
+if (lock.version !== pkg.version || lock.packages[''].devDependencies.electron !== pkg.devDependencies.electron || lock.packages['node_modules/electron'].version !== pkg.devDependencies.electron) {
+  console.error('package-lock.json must match the application and Electron versions'); failed = true;
+}
 if (pkg.main !== 'main.js') {
   console.error('package.json main must point to main.js');
   failed = true;
@@ -63,7 +75,7 @@ if (pkg.license !== 'MIT') {
 }
 
 const indexHtml = fs.readFileSync(path.join(root, 'renderer/index.html'), 'utf8');
-for (const ref of ['styles.css', 'app.js']) {
+for (const ref of ['styles.css', 'core.js', 'app.js']) {
   if (!indexHtml.includes(ref)) {
     console.error(`renderer/index.html does not reference ${ref}`);
     failed = true;
