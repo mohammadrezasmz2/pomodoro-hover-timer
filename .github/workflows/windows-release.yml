@@ -25,6 +25,9 @@ jobs:
       - name: Validate source
         run: node scripts/check.js
 
+      - name: Behavior tests
+        run: npm test
+
       - name: Build portable Windows ZIP
         shell: pwsh
         run: ./scripts/build-portable.ps1

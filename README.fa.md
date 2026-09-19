@@ -6,9 +6,9 @@ Pomodoro Timing یک نرم‌افزار دسکتاپ ویندوزی مبتنی 
 
 ## دانلود نسخهٔ ویندوز
 
-**[دانلود نسخهٔ 1.6.3 برای Windows x64](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.3/Pomodoro-Timing-1.6.3-Windows-x64.zip)**
+**[دانلود نسخهٔ 1.6.4 برای Windows x64](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.4/Pomodoro-Timing-1.6.4-Windows-x64.zip)**
 
-[توضیحات انتشار](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/tag/v1.6.3) · [فایل checksum از نوع SHA-256](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.3/Pomodoro-Timing-1.6.3-Windows-x64.zip.sha256)
+[توضیحات انتشار](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/tag/v1.6.4) · [فایل checksum از نوع SHA-256](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.4/Pomodoro-Timing-1.6.4-Windows-x64.zip.sha256)
 
 ۱. فایل ZIP پرتابل را دانلود کنید و **تمام محتویات آن** را در یک پوشه استخراج کنید.
 ۲. برای اجرای برنامه، `Run.bat` را باز کنید.
@@ -20,6 +20,7 @@ Pomodoro Timing یک نرم‌افزار دسکتاپ ویندوزی مبتنی 
 ## امکانات
 
 - چند تایمر پومودورو با مدت، هدف، درصد پیشرفت و عنوان قابل ویرایش
+- بازشدن با Hover در بالای وسط هر نمایشگر
 - میان‌بر سریع `Ctrl + Alt + P`
 - اجرا در System Tray و قابلیت اجرای خودکار با ویندوز
 - ذخیره‌ی یادداشت‌ها و داده‌ها به‌صورت محلی در Documents
@@ -41,17 +42,17 @@ Windows وابسته است.
 
 نیازمندی‌ها:
 
-- Node.js نسخه 20 یا بالاتر (برای توسعه Node 22 پیشنهاد می‌شود)
+- Node.js نسخهٔ 22.12 یا بالاتر (برای توسعه Node 24 پیشنهاد می‌شود)
 - npm
 - ویندوز برای تست کامل قابلیت‌های وابسته به Windows
 
 ```bash
-npm install
+npm ci
 npm start
 ```
 
-نسخه Electron روی `31.7.7` ثابت شده تا با نسخه‌ای که از فایل اصلی شما استخراج
-شده یکسان باشد. قبل از ارتقا، بهتر است نسخه‌ی جدید Electron روی ویندوز تست شود.
+نسخهٔ Electron برابر `44.4.3` است. توسعه و ساخت ویندوز هر دو نسخه را از
+package.json می‌خوانند و package-lock.json وابستگی‌ها را ثابت نگه می‌دارد.
 
 ## بررسی سورس
 
@@ -82,7 +83,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-portable.ps1
 - CI برای بررسی Push و Pull Request
 - CodeQL برای بررسی امنیتی JavaScript
 - Build خودکار نسخه Windows
-- ساخت GitHub Release هنگام Push کردن Tag مثل `v1.6.3`
+- ساخت GitHub Release هنگام Push کردن Tag مثل `v1.6.4`
 - Dependabot برای وابستگی Electron و GitHub Actions
 
 ## حریم خصوصی و داده‌ها
@@ -94,3 +95,27 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-portable.ps1
 
 کد پروژه تحت مجوز [MIT](LICENSE) منتشر می‌شود. Attribution و مجوز بخش‌های
 Third-party در [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) قرار دارد.
+
+## ذخیره و رفتار تایمر
+
+نسخهٔ جدید را در پوشهٔ تازه استخراج کنید. داده‌ها در Documents\Pomodoro Timing
+می‌مانند؛ پیش از ارتقا یک کپی از این پوشه بگیرید. فایل اصلی با نوشتن در فایل موقت
+جایگزین می‌شود و pomodoro-data.json.bak نسخهٔ معتبر قبلی را نگه می‌دارد.
+Restart.bat ابتدا درخواست ذخیره و خروج عادی می‌دهد. در صورت شکست ذخیره، برنامه
+باز می‌ماند و پیام خطا نشان می‌دهد.
+
+تایمرِ در حال اجرا، زمان خواب سیستم و بسته‌بودن برنامه را هم حساب می‌کند.
+برای کنارگذاشتن این زمان، تایمر را Pause کنید. مهلت پایان از ساعت سیستم استفاده
+می‌کند؛ جلوکشیدن دستی ساعت ممکن است تایمر را زودتر تمام کند. عقب‌کشیدن ساعت
+عدد باقی‌مانده را بیشتر نمی‌کند، ولی می‌تواند رسیدن به مهلت را عقب بیندازد.
+
+```bash
+npm run check
+npm test
+# در ویندوز، پس از npm ci:
+npm run test:electron
+```
+
+آزمون رفتاری و اجرای خودکار Electron روی ویندوز در CI تعریف شده است. آزمون
+دستی صدا، منوی Start، خواب و نمایشگرهای واقعی در [چک‌لیست تست](docs/TESTING.md)
+آمده است. [راهنمای استفاده و پشتیبان‌گیری](docs/USER_GUIDE.fa.md) را نیز ببینید.

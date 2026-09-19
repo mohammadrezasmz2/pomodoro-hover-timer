@@ -3,7 +3,9 @@
 const isDesktop = typeof window.desktop !== 'undefined';
 if (!isDesktop) document.body.classList.add('preview');
 
-const STATE_VERSION = 8;
+const STATE_VERSION = 9;
+let stateReady = false;
+document.getElementById('panel').inert = true;
 const SEG_COUNT = 15;
 const RING_C = 2 * Math.PI * 50;
 const BODY_PAD = 10;
@@ -115,7 +117,8 @@ const I18N = {
     noHabits: 'برای این روز عادت فعالی وجود ندارد.', noTodos: 'برای این روز کاری ثبت نشده.', removeHabit: 'حذف عادت', removeTodo: 'حذف کار',
     habitDuration: 'مدت عادت', habitDurationWeek: '۱ هفته', habitDurationMonth: '۱ ماه', habitDurationYear: '۱ سال',
     habitUntil: 'تا', todoStatusCycle: 'وضعیت: خالی ← انجام شد ← انجام نشد', noteActivityTitle: 'فعالیت‌های ثبت‌شده',
-    noteHabits: 'عادت‌ها', noteWorks: 'کارها', todayCompact: 'امروز'
+    noteHabits: 'عادت‌ها', noteWorks: 'کارها', todayCompact: 'امروز',
+    saveFailed: 'ذخیره انجام نشد؛ فضای دیسک و دسترسی پوشهٔ حافظه را بررسی کنید.'
   },
   en: {
     toolReminder: 'Reminders', toolStats: 'Statistics & Calendar', toolSettings: 'Settings',
@@ -154,7 +157,8 @@ const I18N = {
     noHabits: 'No active habits for this day.', noTodos: 'No tasks for this day.', removeHabit: 'Remove habit', removeTodo: 'Remove task',
     habitDuration: 'Habit duration', habitDurationWeek: '1 week', habitDurationMonth: '1 month', habitDurationYear: '1 year',
     habitUntil: 'until', todoStatusCycle: 'Status: empty → done → missed', noteActivityTitle: 'Recorded activity',
-    noteHabits: 'Habits', noteWorks: 'Works', todayCompact: 'Today'
+    noteHabits: 'Habits', noteWorks: 'Works', todayCompact: 'Today',
+    saveFailed: 'Changes could not be saved. Check disk space and access to the data folder.'
   }
 };
 function currentLang() { return state && state.settings && state.settings.language === 'en' ? 'en' : 'fa'; }
@@ -274,7 +278,7 @@ function ensureProductivityState(target) {
   if (!target.todos.byDate || typeof target.todos.byDate !== 'object' || Array.isArray(target.todos.byDate)) target.todos.byDate = {};
 }
 function normalizeState(s) {
-  if (!s || typeof s !== 'object' || !Array.isArray(s.timers)) return structuredClone(DEFAULTS);
+  if (!PomodoroCore.validState(s)) return structuredClone(DEFAULTS);
   if (s.version === 3) { // migrate old done/goal format -> progress%
     s.timers.forEach(tmr => {
       const g = Math.max(1, tmr.goal || 1);
@@ -307,9 +311,10 @@ function load() {
   return structuredClone(DEFAULTS);
 }
 function save() {
+  if (!stateReady) return;
+  PomodoroCore.markUpdated(state);
   try { localStorage.setItem('pomodoro-state', JSON.stringify(state)); } catch (_) {}
   if (isDesktop && window.desktop.syncState) { try { window.desktop.syncState(state); } catch (_) {} }
-  if (isDesktop && window.desktop.saveData) { try { window.desktop.saveData(JSON.stringify(state, null, 2)); } catch (_) {} }
   pushStatsState();
 }
 
@@ -350,7 +355,14 @@ function buildRow(t) {
 
   const run = node.querySelector('.js-run');
   run.classList.toggle('off', !t.running);
-  run.addEventListener('click', () => { t.running = !t.running; run.classList.toggle('off', !t.running); save(); });
+  run.addEventListener('click', () => {
+    if (t.running) {
+      if (PomodoroCore.pauseTimer(t)) finishTimer(t);
+    } else PomodoroCore.startTimer(t);
+    run.classList.toggle('off', !t.running);
+    paintRow(t, node);
+    save();
+  });
 
   const title = node.querySelector('.js-title');
   title.textContent = t.title;
@@ -425,6 +437,7 @@ function commitDuration(t, node, input) {
   // length and stop it so no hidden elapsed-time state carries over.
   t.remainingSec = nextSec;
   t.running = false;
+  t.deadlineAt = null;
   const run = node.querySelector('.js-run');
   if (run) run.classList.add('off');
   paintRow(t, node);
@@ -466,6 +479,7 @@ function editGoal(t, node) {
 function bindEditableTitle(el, onSave) {
   el.addEventListener('focus', () => reportEditing(true));
   el.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } });
+  el.addEventListener('input', () => onSave(el.textContent.trim() || t('untitled')));
   el.addEventListener('blur', () => { const v = el.textContent.trim() || t('untitled'); el.textContent = v; onSave(v); reportEditing(false); });
 }
 
@@ -478,27 +492,25 @@ document.getElementById('addBtn').addEventListener('click', () => {
 });
 
 // ---------- countdown ----------
-setInterval(() => {
+function finishTimer(timer) {
+  timer.progress = clampPct((timer.progress || 0) + 100 / Math.max(1, timer.goal || 1));
+  recordCompletion(timer);
+  const node = nodeFor(timer.id);
+  if (node) node.querySelector('.js-run').classList.add('off');
+  onFinished(timer);
+}
+function tickTimers() {
+  if (!stateReady) return;
   let changed = false;
-  state.timers.forEach(t => {
-    if (t.running && t.remainingSec > 0) {
-      t.remainingSec -= 1;
-      if (t.remainingSec <= 0) {
-        t.progress = clampPct((t.progress || 0) + 100 / Math.max(1, t.goal || 1)); // one pomodoro done
-        t.remainingSec = t.durationSec;
-        t.running = false;
-        changed = true;
-        recordCompletion(t);
-        const n = nodeFor(t.id);
-        if (n) n.querySelector('.js-run').classList.add('off');
-        onFinished(t);
-      }
-      const n = nodeFor(t.id);
-      if (n) paintRow(t, n);
-    }
+  const now = Date.now();
+  state.timers.forEach(timer => {
+    if (PomodoroCore.advanceTimer(timer, now)) { finishTimer(timer); changed = true; }
+    const node = nodeFor(timer.id);
+    if (node) paintRow(timer, node);
   });
   if (changed) { save(); renderWeek(); }
-}, 1000);
+}
+setInterval(tickTimers, 250);
 setInterval(save, 5000);
 
 // ---------- finish handling ----------
@@ -715,13 +727,30 @@ if (isDesktop) {
   const panel = document.getElementById('panel');
   panel.addEventListener('mouseenter', () => window.desktop.pointerInside(true));
   panel.addEventListener('mouseleave', () => window.desktop.pointerInside(false));
-  window.desktop.onReveal(() => panel.classList.add('show'));
-  window.desktop.onConceal(() => {
-    panel.classList.remove('show');
-    const finish = () => { window.desktop.concealDone(); panel.removeEventListener('transitionend', finish); };
-    panel.addEventListener('transitionend', finish);
-    setTimeout(finish, 300);
+  let hideAnimation = null;
+  window.desktop.onReveal(() => {
+    if (hideAnimation) { clearTimeout(hideAnimation); hideAnimation = null; }
+    panel.classList.add('show');
+    tickTimers();
   });
+  window.desktop.onConceal(generation => {
+    if (hideAnimation) clearTimeout(hideAnimation);
+    panel.classList.remove('show');
+    hideAnimation = setTimeout(() => { hideAnimation = null; window.desktop.concealDone(generation); }, 300);
+  });
+  window.desktop.onPrepareQuit(() => {
+    if (!stateReady) return;
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    tickTimers(); save();
+    window.desktop.quitReady(state);
+  });
+  window.desktop.onStorageStatus(ok => {
+    const status = document.getElementById('saveStatus');
+    status.textContent = ok ? '' : t('saveFailed');
+    status.hidden = ok;
+    syncSize();
+  });
+  window.desktop.onWorkAreaChanged(() => { if (statsDockOpen) setStatsDock(true); else syncSize(); });
 } else {
   document.getElementById('panel').classList.add('show');
 }
@@ -730,7 +759,6 @@ if (isDesktop) {
 const noteEl = document.getElementById('noteToday');
 const notesOverlay = document.getElementById('notesOverlay');
 const notesListEl = document.getElementById('notesList');
-let noteSaveTimer = null;
 
 function ensureNotes() {
   if (!state.notes || typeof state.notes !== 'object') state.notes = { today: { date: dateKey(new Date()), text: '' }, archive: [] };
@@ -821,13 +849,14 @@ function renderNotesList() {
       const tx = document.createElement('div'); tx.className = 'ni-text'; tx.contentEditable = 'true'; tx.spellcheck = false;
       tx.setAttribute('dir', 'auto'); tx.textContent = note.text || '';
       tx.addEventListener('focus', () => reportEditing(true));
-      tx.addEventListener('blur', () => {
-        reportEditing(false);
+      const saveArchivedNote = () => {
         const val = tx.innerText.replace(/\u00a0/g, ' ');
         if (note.key === 'today') { state.notes.today.text = val; if (noteEl) noteEl.value = val; }
         else if (state.notes.archive[note.idx]) { state.notes.archive[note.idx].text = val; }
         save();
-      });
+      };
+      tx.addEventListener('input', saveArchivedNote);
+      tx.addEventListener('blur', () => { reportEditing(false); saveArchivedNote(); });
       d.appendChild(tx);
     }
 
@@ -846,8 +875,7 @@ if (noteEl) {
   noteEl.addEventListener('blur', () => { reportEditing(false); ensureNotes(); state.notes.today.text = noteEl.value; save(); });
   noteEl.addEventListener('input', () => {
     ensureNotes(); state.notes.today.text = noteEl.value;
-    if (noteSaveTimer) clearTimeout(noteSaveTimer);
-    noteSaveTimer = setTimeout(save, 600);
+    save();
   });
 }
 const prevNotesBtn = document.getElementById('prevNotesBtn');
@@ -1261,6 +1289,7 @@ function showAlarm() {
 const alarmOkBtn = document.getElementById('alarmOk');
 if (alarmOkBtn) alarmOkBtn.addEventListener('click', () => { alarmQueue.shift(); showAlarm(); });
 setInterval(() => {
+  if (!stateReady) return;
   ensureReminders();
   const now = Date.now(); let changed = false;
   for (const r of state.reminders) {
@@ -1307,8 +1336,9 @@ async function restoreFromMemory() {
   if (isDesktop && window.desktop.loadData) {
     try {
       const f = await window.desktop.loadData();
-      if (f && Array.isArray(f.timers)) {
-        state = normalizeState(f);
+      const selected = PomodoroCore.chooseState(state, f);
+      if (selected) {
+        state = normalizeState(selected);
         ensureNotes();
         nextId = Math.max(0, ...state.timers.map(t => t.id)) + 1;
         try { setAlert.checked = !!state.settings.alertOnFinish; } catch (_) {}
@@ -1319,6 +1349,11 @@ async function restoreFromMemory() {
       }
     } catch (_) {}
   }
+  stateReady = true;
+  document.getElementById('panel').inert = false;
+  tickTimers();
   save();
 }
 restoreFromMemory();
+window.addEventListener('resize', syncSize);
+window.addEventListener('beforeunload', () => { tickTimers(); save(); });

@@ -48,3 +48,10 @@ provided in the official distribution.
 - The application's About panel contains a developer contact email. Confirm that you want this address to be public before publishing the repository.
 - Confirm that you own or have permission to redistribute the icon/image assets in `build/`.
 - Consider Windows code signing for public binary releases.
+
+## Follow-up: 1.6.4
+
+The original packaging audit above describes 1.6.3. Version 1.6.4 changes application
+behavior, persistence, hover, timing, IPC and packaging, upgrades Electron to the
+version pinned in package.json, and adds behavior and Windows smoke tests.
+See CHANGELOG.md and docs/TESTING.md for the current scope.

@@ -34,7 +34,7 @@ SOFTWARE.
 
 ## Electron / Chromium
 
-The Windows release build downloads the official Electron 31.7.7 runtime.
+The Windows release build downloads the official Electron runtime pinned in package.json.
 Electron is MIT-licensed and its distribution contains additional Chromium and
 third-party notices. The build script intentionally preserves Electron's
 `LICENSE` and `LICENSES.chromium.html` files inside the generated runtime.

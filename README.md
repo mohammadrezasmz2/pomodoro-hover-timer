@@ -9,9 +9,9 @@ and calendar/statistics views.
 
 ## Download for Windows
 
-**[Download v1.6.3 — Windows x64](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.3/Pomodoro-Timing-1.6.3-Windows-x64.zip)**
+**[Download v1.6.4 — Windows x64](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.4/Pomodoro-Timing-1.6.4-Windows-x64.zip)**
 
-[Release notes](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/tag/v1.6.3) · [SHA-256 checksum](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.3/Pomodoro-Timing-1.6.3-Windows-x64.zip.sha256)
+[Release notes](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/tag/v1.6.4) · [SHA-256 checksum](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.4/Pomodoro-Timing-1.6.4-Windows-x64.zip.sha256)
 
 1. Download the portable ZIP and extract **all** its contents into a folder.
 2. Open `Run.bat` to start the app.
@@ -23,6 +23,7 @@ to run it. The **Source code** archives on the release page are for development.
 ## Features
 
 - Multiple Pomodoro timers with editable duration, goal, progress, and task name
+- Top-center hover access on every monitor
 - Quick show/hide shortcut: `Ctrl + Alt + P`
 - System-tray operation and optional Windows autostart
 - Daily notes saved locally in the user's Documents folder
@@ -45,17 +46,17 @@ currently supported without changes.
 
 Requirements:
 
-- Node.js 20 or newer (Node 22 is recommended for development)
+- Node.js 22.12 or newer (Node 24 is recommended for development)
 - npm
 - Windows for testing Windows-specific behavior
 
 ```bash
-npm install
+npm ci
 npm start
 ```
 
-The app's runtime dependency is pinned to Electron `31.7.7` to match the
-original supplied build. Dependency updates should be tested before release.
+Electron is pinned to `44.4.3`. Development and Windows packaging both read the
+version from package.json; package-lock.json locks the development dependencies.
 
 ## Static checks
 
@@ -80,7 +81,8 @@ or directly:
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-portable.ps1
 ```
 
-The build script downloads the official Electron 31.7.7 Windows x64 runtime,
+The build script downloads the official Electron version pinned in package.json,
+checks its SHA-256 against the official SHASUMS256.txt,
 copies this repository's app source into it, preserves Electron/Chromium
 license files, adds the supplied Windows launcher scripts, and writes a release
 ZIP plus SHA-256 checksum to `dist/`.
@@ -90,7 +92,7 @@ ZIP plus SHA-256 checksum to `dist/`.
 - **CI** checks the repository on pushes and pull requests.
 - **CodeQL** performs JavaScript security analysis.
 - **Windows Build / Release** creates a portable Windows ZIP. A tag such as
-  `v1.6.3` also creates a GitHub Release and attaches the ZIP and checksum.
+  `v1.6.4` also creates a GitHub Release and attaches the ZIP and checksum.
 - **Dependabot** checks the Electron development dependency and GitHub Actions.
 
 ## Data and privacy
@@ -123,3 +125,28 @@ submitting changes.
 
 Pomodoro Timing is released under the [MIT License](LICENSE).
 Third-party attribution is listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## Reliability and testing
+
+Unzip each new release into a new folder. Data remains in Documents\Pomodoro Timing;
+make a copy of that folder before upgrading. The primary JSON is written atomically;
+pomodoro-data.json.bak keeps the previous valid snapshot. Restart.bat requests a
+graceful save and restart. If saving fails, the app stays open and shows an error.
+
+Running timers count time during sleep and while the app is closed. Pause a timer
+to exclude that time. Deadlines use the system clock: changing the clock forward
+can complete a timer early; moving it backward never increases the displayed time
+but can delay the deadline. Each completed interval is recorded once.
+
+```bash
+npm run check
+npm test
+# Windows, after npm ci:
+npm run test:electron
+```
+
+CI runs behavior tests and an isolated real Electron launch/quit/restore test on
+Windows. Manual checks for Start-menu integration, audio, sleep and physical
+monitor/DPI combinations are listed in [docs/TESTING.md](docs/TESTING.md).
+
+See [the Persian quick guide](docs/USER_GUIDE.fa.md) for everyday use and backups.
