@@ -6,7 +6,8 @@ fs.mkdirSync(base, {recursive: true});
 const data = fs.mkdtempSync(path.join(base, 'electron-'));
 async function run(phase) {
   await new Promise((resolve, reject) => {
-    const child = spawn(require('electron'), [path.join(__dirname, 'electron-smoke.cjs')], {
+    const cli = path.join(__dirname, '..', 'node_modules', 'electron', 'cli.js');
+    const child = spawn(process.execPath, [cli, path.join(__dirname, 'electron-smoke.cjs')], {
       env: {...process.env, POMODORO_SMOKE_DATA: data, POMODORO_SMOKE_PHASE: phase},
       stdio: 'inherit', windowsHide: true,
     });
