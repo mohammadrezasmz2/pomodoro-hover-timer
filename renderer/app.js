@@ -630,7 +630,8 @@ pinBtn.addEventListener('click', () => {
   pinned = !pinned; pinBtn.classList.toggle('active', pinned);
   if (isDesktop) window.desktop.setPinned(pinned);
 });
-document.getElementById('minBtn').addEventListener('click', () => { if (isDesktop) window.desktop.minimize(); });
+const minBtn = document.getElementById('minBtn');
+if (minBtn) minBtn.addEventListener('click', () => { if (isDesktop) window.desktop.minimize(); });
 document.getElementById('closeBtn').addEventListener('click', () => { if (isDesktop) window.desktop.hide(); });
 const statsBtn = document.getElementById('statsBtn');
 const statsDock = document.getElementById('statsDock');
@@ -883,7 +884,23 @@ if (noteEl) {
   });
 }
 const prevNotesBtn = document.getElementById('prevNotesBtn');
-if (prevNotesBtn) prevNotesBtn.addEventListener('click', () => { renderNotesList(); notesOverlay.classList.add('show'); if (isDesktop && window.desktop.resize) window.desktop.resize(640); });
+if (prevNotesBtn) prevNotesBtn.addEventListener('click', async () => {
+  renderNotesList();
+  notesOverlay.classList.add('show');
+  // Give history a comfortable viewport when the stats dock is closed, while
+  // never requesting more height than the current monitor can provide. The
+  // CSS still keeps the card/header safe if the work area is smaller.
+  if (isDesktop && window.desktop.resize) {
+    let targetHeight = 640;
+    if (window.desktop.getWorkArea) {
+      try {
+        const wa = await window.desktop.getWorkArea();
+        if (wa && wa.height) targetHeight = Math.min(700, Math.max(460, wa.height - 8));
+      } catch (_) {}
+    }
+    window.desktop.resize(targetHeight);
+  }
+});
 const notesCloseBtn = document.getElementById('notesClose');
 if (notesCloseBtn) notesCloseBtn.addEventListener('click', () => { notesOverlay.classList.remove('show'); syncSize(); });
 

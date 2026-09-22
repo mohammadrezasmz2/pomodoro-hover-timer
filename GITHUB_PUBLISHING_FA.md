@@ -17,7 +17,7 @@ Git معمولی مسدود می‌کند و برای فایل‌های باین
 ```bash
 git init
 git add .
-git commit -m "Open-source release v1.6.4"
+git commit -m "Open-source release v1.6.7"
 git branch -M main
 git remote add origin https://github.com/YOUR-USERNAME/pomodoro-hover-timer.git
 git push -u origin main
@@ -44,8 +44,8 @@ Issue/PR templates در این بسته قرار داده شده‌اند.
 Tag نسخه را Push کنید:
 
 ```bash
-git tag v1.6.4
-git push origin v1.6.4
+git tag v1.6.7
+git push origin v1.6.7
 ```
 
 Workflow فایل `.github/workflows/windows-release.yml` روی runner ویندوز اجرا می‌شود،

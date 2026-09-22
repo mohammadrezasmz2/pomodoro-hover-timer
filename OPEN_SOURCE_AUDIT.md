@@ -55,3 +55,13 @@ The original packaging audit above describes 1.6.3. Version 1.6.4 changes applic
 behavior, persistence, hover, timing, IPC and packaging, upgrades Electron to the
 version pinned in package.json, and adds behavior and Windows smoke tests.
 See CHANGELOG.md and docs/TESTING.md for the current scope.
+
+## Supplied update: 1.6.7
+
+On 2026-09-22, the new portable archive supplied by the author identified itself
+as 1.6.7. Its application backend matched the original 1.6.3 source; the new
+changes were in renderer/app.js, index.html, styles.css and stats.css. These
+interface changes were merged with the existing 1.6.4 fixes so publication does
+not revert persistence, hover, timing, IPC or the verified runtime packaging.
+The supplied About label still said 1.6.6 and was synchronized to 1.6.7.
+The bundled old runtime was not added to Git; releases use the pinned runtime.

@@ -1,7 +1,7 @@
 {
   "name": "pomodoro-hover-timer",
   "productName": "Pomodoro Timing",
-  "version": "1.6.4",
+  "version": "1.6.7",
   "description": "Offline Windows desktop Pomodoro timer with notes, reminders, habit tracking, daily tasks, and calendar/statistics views.",
   "main": "main.js",
   "author": "MR.Senobari",

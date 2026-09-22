@@ -338,3 +338,45 @@ body.embedded .daily-pane .activity-state{
 /* To-do lists can be long: never compress their rows; scroll the list instead. */
 body.embedded .todo-pane .activity-row{ min-height:40px; }
 body.embedded .habit-pane .activity-row{ min-height:42px; }
+
+/* ===================== v1.6.6 — Persian daily-detail RTL + top empty state ===================== */
+/* Preserve the physical three-column order (Pomodoros left, Habits middle,
+   To-do right). Only text flow/alignment changes for Persian. */
+body.lang-fa .daily-card .card-title,
+body.lang-fa .daily-card .day-label,
+body.lang-fa .daily-pane .activity-subtitle,
+body.lang-fa .daily-pane .activity-empty,
+body.lang-fa .daily-pane .activity-name,
+body.lang-fa .daily-pane .activity-state,
+body.lang-fa .daily-pane .activity-meta,
+body.lang-fa .pomodoro-pane .empty{
+  direction:rtl;
+  text-align:right;
+  unicode-bidi:plaintext;
+}
+body.lang-en .daily-card .card-title,
+body.lang-en .daily-card .day-label,
+body.lang-en .daily-pane .activity-subtitle,
+body.lang-en .daily-pane .activity-empty,
+body.lang-en .daily-pane .activity-name,
+body.lang-en .daily-pane .activity-state,
+body.lang-en .daily-pane .activity-meta,
+body.lang-en .pomodoro-pane .empty{
+  direction:ltr;
+  text-align:left;
+}
+
+/* The Pomodoro empty message used to be absolutely centered in its pane.
+   In the embedded dock it now starts at the top, matching Habit/To-do. */
+body.embedded .pomodoro-pane .chart .empty{
+  position:static;
+  inset:auto;
+  display:block;
+  flex:0 0 100%;
+  width:100%;
+  height:auto;
+  align-self:flex-start;
+  margin:0;
+  padding:4px 1px;
+  line-height:1.5;
+}
