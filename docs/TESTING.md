@@ -1,4 +1,4 @@
-# Validation for v1.6.4
+# Validation for v1.6.7
 
 Run `npm run check` and `npm test` on Node.js 22.12+ (24 recommended).
 On Windows, run `npm ci` followed by `npm run test:electron`.

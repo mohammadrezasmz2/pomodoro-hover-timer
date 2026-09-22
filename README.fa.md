@@ -6,9 +6,9 @@ Pomodoro Timing یک نرم‌افزار دسکتاپ ویندوزی مبتنی 
 
 ## دانلود نسخهٔ ویندوز
 
-**[دانلود نسخهٔ 1.6.4 برای Windows x64](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.4/Pomodoro-Timing-1.6.4-Windows-x64.zip)**
+**[دانلود نسخهٔ 1.6.7 برای Windows x64](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.7/Pomodoro-Timing-1.6.7-Windows-x64.zip)**
 
-[توضیحات انتشار](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/tag/v1.6.4) · [فایل checksum از نوع SHA-256](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.4/Pomodoro-Timing-1.6.4-Windows-x64.zip.sha256)
+[توضیحات انتشار](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/tag/v1.6.7) · [فایل checksum از نوع SHA-256](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.7/Pomodoro-Timing-1.6.7-Windows-x64.zip.sha256)
 
 ۱. فایل ZIP پرتابل را دانلود کنید و **تمام محتویات آن** را در یک پوشه استخراج کنید.
 ۲. برای اجرای برنامه، `Run.bat` را باز کنید.
@@ -83,7 +83,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-portable.ps1
 - CI برای بررسی Push و Pull Request
 - CodeQL برای بررسی امنیتی JavaScript
 - Build خودکار نسخه Windows
-- ساخت GitHub Release هنگام Push کردن Tag مثل `v1.6.4`
+- ساخت GitHub Release هنگام Push کردن Tag مثل `v1.6.7`
 - Dependabot برای وابستگی Electron و GitHub Actions
 
 ## حریم خصوصی و داده‌ها

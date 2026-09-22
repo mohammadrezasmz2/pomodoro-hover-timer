@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on Keep a Changelog principles, and the project uses
 Semantic Versioning for release tags.
 
+## [1.6.7] - 2026-09-22
+
+### Changed
+
+- Publish the supplied 1.6.7 interface updates, including the intermediate 1.6.5/1.6.6 fixes.
+- Keep note history fixed to the viewport, with its header visible and a scrollable list.
+- Request a note-history window height that fits the current monitor.
+- Correct Persian text direction in settings, daily statistics and the weekly empty state.
+- Align the embedded Pomodoro empty message with the top of the other daily columns.
+- Remove the redundant hide button; closing to the tray remains available.
+- Synchronize the About panel, package metadata and download links to 1.6.7.
+
+The persistence, hover, timer, security and packaging fixes released in 1.6.4 are retained.
+
 ## [1.6.4] - 2026-09-19
 
 ### Fixed

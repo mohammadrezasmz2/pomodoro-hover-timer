@@ -40,7 +40,7 @@ body.preview{
   opacity:0; transform:translateY(-12px);
   transition:opacity .2s ease, transform .24s cubic-bezier(.2,.8,.2,1);
 }
-.panel.show{ opacity:1; transform:translateY(0); }
+.panel.show{ opacity:1; transform:none; }
 
 /* ===================== Title bar ===================== */
 .titlebar{ display:flex; align-items:center; justify-content:space-between; padding:2px 4px 10px; }
@@ -725,3 +725,100 @@ body{ overflow-x:hidden; overflow-y:auto; }
 }
 body.theme-light .duration-input{ color:#20915a; }
 body.theme-light .duration-edit{ color:#20915a; }
+
+/* ===================== v1.6.5 — fixed notes history modal ===================== */
+/* A transformed ancestor makes position:fixed act like it is fixed to that ancestor.
+   The visible panel now uses transform:none, so overlays are truly viewport-fixed. */
+#notesOverlay{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  padding:12px !important;
+  overflow:hidden !important;
+  align-items:flex-start !important;
+  justify-content:center !important;
+}
+#notesOverlay .notes-card{
+  width:min(560px, calc(100vw - 24px)) !important;
+  height:calc(100vh - 24px) !important;
+  max-height:calc(100vh - 24px) !important;
+  min-height:0 !important;
+  margin:0 !important;
+  overflow:hidden !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+#notesOverlay .notes-head{
+  flex:0 0 auto !important;
+  min-height:40px !important;
+  position:relative;
+  z-index:2;
+  background:inherit;
+}
+#notesOverlay .notes-list{
+  flex:1 1 0 !important;
+  min-height:0 !important;
+  max-height:none !important;
+  overflow-x:hidden !important;
+  overflow-y:scroll !important;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+  padding-inline-end:6px;
+}
+#notesOverlay .notes-list::-webkit-scrollbar{ width:10px; }
+#notesOverlay .notes-list::-webkit-scrollbar-track{ background:rgba(255,255,255,.04); border-radius:10px; }
+#notesOverlay .notes-list::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.26); border-radius:10px; border:2px solid transparent; background-clip:padding-box; }
+#notesOverlay .notes-list::-webkit-scrollbar-thumb:hover{ background:rgba(255,255,255,.4); background-clip:padding-box; }
+body.theme-light #notesOverlay .notes-list::-webkit-scrollbar-track{ background:rgba(15,23,42,.06); }
+body.theme-light #notesOverlay .notes-list::-webkit-scrollbar-thumb{ background:rgba(15,23,42,.28); background-clip:padding-box; }
+
+/* ===================== v1.6.6 — Persian settings RTL ===================== */
+/* Keep the settings popover anchored in the same physical place, but make its
+   contents read naturally in Persian. English keeps the existing LTR layout. */
+body.lang-fa .settings-pop{
+  direction:rtl;
+  text-align:right;
+}
+body.lang-fa .settings-pop .set-row{
+  direction:rtl;
+  text-align:right;
+}
+body.lang-fa .settings-pop .set-row > [data-i18n]{
+  direction:rtl;
+  text-align:right;
+  unicode-bidi:plaintext;
+}
+body.lang-fa .settings-pop .language-select{
+  direction:rtl;
+  text-align:right;
+}
+body.lang-fa .settings-pop .language-select option{
+  direction:rtl;
+  text-align:right;
+}
+body.lang-fa .settings-pop .set-open,
+body.lang-fa .settings-pop .set-hint{
+  direction:rtl;
+}
+body.lang-en .settings-pop,
+body.lang-en .settings-pop .set-row,
+body.lang-en .settings-pop .language-select{
+  direction:ltr;
+  text-align:left;
+}
+
+/* ===================== v1.6.7 — Persian weekly empty-state RTL fix ===================== */
+/* Keep the right sidebar physically in place, but let the Persian empty message
+   use its own RTL text flow and align with the "This week" heading. */
+body.lang-fa #weekView .week-empty{
+  display:block;
+  width:100%;
+  box-sizing:border-box;
+  direction:rtl !important;
+  text-align:right !important;
+  unicode-bidi:plaintext;
+  align-self:flex-start;
+  justify-self:stretch;
+  padding-inline:2px;
+}

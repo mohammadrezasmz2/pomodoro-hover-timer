@@ -9,9 +9,9 @@ and calendar/statistics views.
 
 ## Download for Windows
 
-**[Download v1.6.4 — Windows x64](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.4/Pomodoro-Timing-1.6.4-Windows-x64.zip)**
+**[Download v1.6.7 — Windows x64](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.7/Pomodoro-Timing-1.6.7-Windows-x64.zip)**
 
-[Release notes](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/tag/v1.6.4) · [SHA-256 checksum](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.4/Pomodoro-Timing-1.6.4-Windows-x64.zip.sha256)
+[Release notes](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/tag/v1.6.7) · [SHA-256 checksum](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.7/Pomodoro-Timing-1.6.7-Windows-x64.zip.sha256)
 
 1. Download the portable ZIP and extract **all** its contents into a folder.
 2. Open `Run.bat` to start the app.
@@ -92,7 +92,7 @@ ZIP plus SHA-256 checksum to `dist/`.
 - **CI** checks the repository on pushes and pull requests.
 - **CodeQL** performs JavaScript security analysis.
 - **Windows Build / Release** creates a portable Windows ZIP. A tag such as
-  `v1.6.4` also creates a GitHub Release and attaches the ZIP and checksum.
+  `v1.6.7` also creates a GitHub Release and attaches the ZIP and checksum.
 - **Dependabot** checks the Electron development dependency and GitHub Actions.
 
 ## Data and privacy
