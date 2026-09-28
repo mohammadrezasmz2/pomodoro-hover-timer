@@ -1,10 +1,12 @@
-# Validation for v1.6.7
+# Validation for v1.7.4
 
 Run `npm run check` and `npm test` on Node.js 22.12+ (24 recommended).
 On Windows, run `npm ci` followed by `npm run test:electron`.
 
 The behavior suite covers snapshot ordering, legacy metadata, atomic writes and
 backup recovery, failed writes, countdown delay/pause/restore, monitor geometry,
+manual opening by default, saved hover preferences, tray/Start/shortcut access,
+horizontal drag bounds/persistence, three-tab note exports and safe renaming,
 hover hit testing, IPC sender/payload boundaries, bridge event wrapping, and
 Jalali conversion against Intl around calendar boundaries.
 
@@ -18,8 +20,10 @@ personal application data. The test never points at an existing user profile.
 
 Automated launch/DOM tests do not replace these hardware/OS checks:
 
-- Hover on each monitor, including monitors above/left of the primary display;
-  leave/re-enter the hot zone; verify pin/editing and rapid hide/show.
+- With the hover setting off, verify the top edge never opens the panel. Enable
+  it and hover on each monitor, including monitors above/left of the primary;
+  leave/re-enter the zone, then disable and restart. Verify pin/editing and rapid hide/show.
+- Drag the ↔ handle horizontally; verify no vertical jump and restored position.
 - Tray, Ctrl+Alt+P, Windows Start by mouse and keyboard; hidden tray overflow.
 - 100%, 125%, 150% and 200% scaling; small work areas and taskbars on each edge.
 - Real sleep/resume and timer completion sound; one completion per interval.

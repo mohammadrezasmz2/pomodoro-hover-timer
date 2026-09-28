@@ -31,9 +31,13 @@ function toJalali(date) {
   return { jy: o.year, jm: o.month, jd: o.day };
 }
 function jalaliToDate(jy, jm, jd, hh, mm) {
-  const base = new Date(jy + 621, (jm - 1), jd, hh || 0, mm || 0, 0, 0);
-  for (let off = -40; off <= 40; off++) {
-    const g = new Date(base.getTime() + off * 864e5);
+  // The Jalali month number is not aligned with the Gregorian month number.
+  // Search around an approximate Gregorian date far enough to reach the real
+  // Jalali day, then rebuild the Date with the requested local time.
+  const base = new Date(jy + 621, (jm - 1), jd, 12, 0, 0, 0);
+  for (let off = -120; off <= 120; off++) {
+    const g = new Date(base);
+    g.setDate(base.getDate() + off);
     const c = toJalali(g);
     if (c.jy === jy && c.jm === jm && c.jd === jd) return new Date(g.getFullYear(), g.getMonth(), g.getDate(), hh || 0, mm || 0, 0, 0);
   }
@@ -65,7 +69,7 @@ function mkTimer(id, title, color) {
 
 const DEFAULTS = {
   version: STATE_VERSION,
-  settings: { alertOnFinish: true, language: 'fa', rightPanelMode: 'week', dateCalendar: 'persian', theme: 'dark' },
+  settings: { alertOnFinish: true, revealOnHover: false, language: 'fa', rightPanelMode: 'week', dateCalendar: 'persian', theme: 'dark' },
   history: [],
   habits: { items: [], records: {} },
   todos: { byDate: {} },
@@ -73,7 +77,7 @@ const DEFAULTS = {
 };
 
 let state = load();
-state.settings = Object.assign({ alertOnFinish: true, language: 'fa', rightPanelMode: 'week', dateCalendar: 'persian', theme: 'dark' }, state.settings || {});
+state.settings = Object.assign({ alertOnFinish: true, revealOnHover: false, language: 'fa', rightPanelMode: 'week', dateCalendar: 'persian', theme: 'dark' }, state.settings || {});
 if (!Array.isArray(state.history)) state.history = [];
 ensureProductivityState(state);
 let nextId = Math.max(0, ...state.timers.map(t => t.id)) + 1;
@@ -81,20 +85,23 @@ let nextId = Math.max(0, ...state.timers.map(t => t.id)) + 1;
 
 const I18N = {
   fa: {
-    toolReminder: 'یادآور', toolStats: 'آمار و تقویم', toolSettings: 'تنظیمات',
+    toolReminder: 'یادآور', toolMove: 'جابجایی پنجره به چپ و راست', toolStats: 'آمار و تقویم', toolSettings: 'تنظیمات',
     toolPin: 'سنجاق کردن (باز نگه‌داشتن)', toolHide: 'مخفی کردن', toolClose: 'بستن (به تری می‌رود)',
+    revealOnHover: 'نمایش با بردن موس به بالای صفحه',
+    manualOpenHint: 'پیش‌فرض خاموش است؛ پنل را از آیکن کنار ساعت، منوی Start یا میان‌بر باز کنید.',
     alertOnFinish: 'نمایش پنجره هنگام پایان تایمر', language: 'زبان',
     dateSystem: 'نوع تاریخ', calendarPersian: 'شمسی', calendarGregorian: 'میلادی', calendarHijri: 'قمری',
     themeLabel: 'تم', themeDark: 'دارک', themeLight: 'روشن',
     openData: '📁 باز کردن پوشهٔ حافظه (Documents)', aboutButton: 'ℹ️ درباره',
     shortcutHint: 'میان‌بر نمایش سریع: Ctrl + Alt + P', todayNote: 'یادداشت امروز',
     notePlaceholder: 'امروز روی چی کار کردی؟ اینجا بنویس…', previousNotes: '🗒️ یادداشت‌های روزهای قبل',
+    noteTab2: 'یادداشت ۲', noteTab3: 'یادداشت ۳', noteTabRename: 'برای تغییر نام دوباره کلیک کنید',
     addTimer: 'افزودن تایمر جدید', thisWeek: 'این هفته', pomodoroFinished: 'یک پومودورو تمام شد',
     breakTime: 'وقت استراحت', finishOk: 'OK — تمام شد، استراحت', previousNotesTitle: '🗒️ یادداشت‌های روزهای قبل',
     close: 'بستن', remindersTitle: '⏰ یادآورها (تاریخ شمسی)', savedReminders: 'ثبت‌شده‌ها',
     setReminder: 'تنظیم یادآور', dateLabel: 'تاریخ:', year: 'سال', month: 'ماه', day: 'روز',
     timeLabel: 'ساعت:', hour: 'ساعت', minute: 'دقیقه', textLabel: 'متن:', reminderPlaceholder: 'یادم بنداز که…',
-    repeatLabel: 'تکرار:', repeatNone: 'بدون تکرار', repeatWeekly: 'هر هفته', repeatMonthly: 'هر ماه',
+    repeatLabel: 'تکرار:', repeatNone: 'بدون تکرار', repeatDaily: 'هر روز', repeatWeekly: 'هر هفته', repeatMonthly: 'هر ماه',
     addReminder: 'افزودن یادآور', quickFromNow: 'سریع (از الان)', reminder: 'یادآور', okay: 'باشه',
     aboutTitle: 'ℹ️ درباره Pomodoro Timing', developer: 'سازنده', email: 'ایمیل',
     goalTitle: 'هدف: چند پومودورو تا ۱۰۰٪؟ (کلیک کن و عدد بزن)', timeRemaining: 'زمان باقی‌مانده',
@@ -108,7 +115,7 @@ const I18N = {
     weekTotal: ({count}) => `مجموع هفته: <b>${uiNum(count)}</b> پومودورو`,
     solarLabel: 'شمسی', gregorianLabel: 'میلادی', hijriLabel: 'قمری',
     hoursLater: ({hours}) => `${uiNum(hours)} ساعت دیگر`, defaultHoursReminder: ({hours}) => `یادآور ${uiNum(hours)} ساعته`,
-    noReminders: 'یادآوری ثبت نشده.', weeklyBadge: 'هفتگی', monthlyBadge: 'ماهانه', noText: '(بدون متن)',
+    noReminders: 'یادآوری ثبت نشده.', dailyBadge: 'روزانه', weeklyBadge: 'هفتگی', monthlyBadge: 'ماهانه', noText: '(بدون متن)',
     reminderFallback: 'یادآور',
     weekMode: 'هفته', habitMode: 'عادت‌ها', todoMode: 'کارها', weekModeTitle: 'نمای هفتگی',
     habitModeTitle: 'هبیت ترکر', todoModeTitle: 'فهرست کارهای روز', habitTracker: 'هبیت ترکر', todoList: 'فهرست کارهای روز',
@@ -121,20 +128,23 @@ const I18N = {
     saveFailed: 'ذخیره انجام نشد؛ فضای دیسک و دسترسی پوشهٔ حافظه را بررسی کنید.'
   },
   en: {
-    toolReminder: 'Reminders', toolStats: 'Statistics & Calendar', toolSettings: 'Settings',
+    toolReminder: 'Reminders', toolMove: 'Move window left or right', toolStats: 'Statistics & Calendar', toolSettings: 'Settings',
     toolPin: 'Pin (keep open)', toolHide: 'Hide', toolClose: 'Close (keep in tray)',
+    revealOnHover: 'Show when the pointer touches the top edge',
+    manualOpenHint: 'Off by default. Open from the tray icon, Start menu or shortcut.',
     alertOnFinish: 'Show window when a timer finishes', language: 'Language',
     dateSystem: 'Date system', calendarPersian: 'Solar Hijri', calendarGregorian: 'Gregorian', calendarHijri: 'Hijri',
     themeLabel: 'Theme', themeDark: 'Dark', themeLight: 'Light',
     openData: '📁 Open data folder (Documents)', aboutButton: 'ℹ️ About',
     shortcutHint: 'Quick show shortcut: Ctrl + Alt + P', todayNote: "Today's note",
     notePlaceholder: 'What did you work on today? Write it here…', previousNotes: '🗒️ Previous notes',
+    noteTab2: 'Note 2', noteTab3: 'Note 3', noteTabRename: 'Click again to rename',
     addTimer: 'Add new timer', thisWeek: 'This week', pomodoroFinished: 'One pomodoro finished',
     breakTime: 'Time for a break', finishOk: 'OK — done, take a break', previousNotesTitle: '🗒️ Previous notes',
     close: 'Close', remindersTitle: '⏰ Reminders (Solar Hijri date)', savedReminders: 'Saved',
     setReminder: 'Set reminder', dateLabel: 'Date:', year: 'Year', month: 'Month', day: 'Day',
     timeLabel: 'Time:', hour: 'Hour', minute: 'Minute', textLabel: 'Text:', reminderPlaceholder: 'Remind me to…',
-    repeatLabel: 'Repeat:', repeatNone: 'No repeat', repeatWeekly: 'Every week', repeatMonthly: 'Every month',
+    repeatLabel: 'Repeat:', repeatNone: 'No repeat', repeatDaily: 'Every day', repeatWeekly: 'Every week', repeatMonthly: 'Every month',
     addReminder: 'Add reminder', quickFromNow: 'Quick (from now)', reminder: 'Reminder', okay: 'OK',
     aboutTitle: 'ℹ️ About Pomodoro Timing', developer: 'Developer', email: 'Email',
     goalTitle: 'Goal: how many pomodoros to reach 100%? (click and enter a number)', timeRemaining: 'Time remaining',
@@ -149,7 +159,7 @@ const I18N = {
     solarLabel: 'Solar Hijri', gregorianLabel: 'Gregorian', hijriLabel: 'Hijri',
     hoursLater: ({hours}) => `${hours} hour${hours === 1 ? '' : 's'} from now`,
     defaultHoursReminder: ({hours}) => `${hours}-hour reminder`, noReminders: 'No reminders saved.',
-    weeklyBadge: 'Weekly', monthlyBadge: 'Monthly', noText: '(no text)', reminderFallback: 'Reminder',
+    dailyBadge: 'Daily', weeklyBadge: 'Weekly', monthlyBadge: 'Monthly', noText: '(no text)', reminderFallback: 'Reminder',
     weekMode: 'Week', habitMode: 'Habits', todoMode: 'To-do', weekModeTitle: 'Weekly view',
     habitModeTitle: 'Habit Tracker', todoModeTitle: 'Daily To Do List', habitTracker: 'Habit Tracker', todoList: 'To Do List',
     habitPlaceholder: 'Habit title…', todoPlaceholder: 'Task for this day…', addHabit: 'Add habit', addTodo: 'Add task',
@@ -260,6 +270,7 @@ function applyLanguage() {
   // Only the user's note text follows the selected writing direction; its panel stays left.
   const note = document.getElementById('noteToday');
   if (note) note.dir = lang === 'fa' ? 'rtl' : 'ltr';
+  renderNoteTabs();
   updateHeaderDate();
 }
 
@@ -287,7 +298,8 @@ function normalizeState(s) {
     });
   }
   s.version = STATE_VERSION;
-  s.settings = Object.assign({ alertOnFinish: true, language: 'fa', rightPanelMode: 'week', dateCalendar: 'persian', theme: 'dark' }, s.settings || {});
+  s.settings = Object.assign({ alertOnFinish: true, revealOnHover: false, language: 'fa', rightPanelMode: 'week', dateCalendar: 'persian', theme: 'dark' }, s.settings || {});
+  s.settings.revealOnHover = s.settings.revealOnHover === true;
   if (!['week', 'habits', 'todos'].includes(s.settings.rightPanelMode)) s.settings.rightPanelMode = 'week';
   if (!['persian', 'gregorian', 'hijri'].includes(s.settings.dateCalendar)) s.settings.dateCalendar = 'persian';
   if (!['dark', 'light'].includes(s.settings.theme)) s.settings.theme = 'dark';
@@ -569,6 +581,9 @@ function beep() {
 const gearBtn = document.getElementById('gearBtn');
 const settingsPop = document.getElementById('settingsPop');
 const setAlert = document.getElementById('setAlert');
+const setHover = document.getElementById('setHover');
+setHover.checked = state.settings.revealOnHover === true;
+setHover.addEventListener('change', () => { state.settings.revealOnHover = setHover.checked; save(); });
 
 setAlert.checked = !!state.settings.alertOnFinish;
 setAlert.addEventListener('change', () => { state.settings.alertOnFinish = setAlert.checked; save(); });
@@ -730,6 +745,57 @@ function reportEditing(v) { if (isDesktop) window.desktop.editing(v); }
 
 if (isDesktop) {
   const panel = document.getElementById('panel');
+  // v1.6.9 — horizontal-only positioning. We intentionally do not use
+  // -webkit-app-region:drag because native frameless dragging can move Y first
+  // and makes the panel flash while the auto-hide logic sees pointer changes.
+  const moveHandle = document.getElementById('moveHandle');
+  if (moveHandle && window.desktop.startHorizontalDrag) {
+    let moving = false;
+    let activePointerId = null;
+
+    const finishMove = (e) => {
+      if (!moving) return;
+      if (e && activePointerId != null && e.pointerId != null && e.pointerId !== activePointerId) return;
+      moving = false;
+      moveHandle.classList.remove('dragging');
+      try {
+        if (activePointerId != null && moveHandle.hasPointerCapture && moveHandle.hasPointerCapture(activePointerId)) {
+          moveHandle.releasePointerCapture(activePointerId);
+        }
+      } catch (_) {}
+      activePointerId = null;
+      try { window.desktop.endHorizontalDrag(); } catch (_) {}
+      // Pointer capture can suppress the normal mouseleave sequence. Re-sync
+      // hover state after release so auto-hide resumes only when appropriate.
+      setTimeout(() => {
+        try { window.desktop.pointerInside(panel.matches(':hover')); } catch (_) {}
+      }, 0);
+    };
+
+    moveHandle.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      moving = true;
+      activePointerId = e.pointerId;
+      moveHandle.classList.add('dragging');
+      try { moveHandle.setPointerCapture(e.pointerId); } catch (_) {}
+      try { window.desktop.pointerInside(true); } catch (_) {}
+      try { window.desktop.startHorizontalDrag(); } catch (_) {}
+    });
+
+    moveHandle.addEventListener('pointermove', (e) => {
+      if (!moving || (activePointerId != null && e.pointerId !== activePointerId)) return;
+      e.preventDefault();
+      try { window.desktop.updateHorizontalDrag(); } catch (_) {}
+    });
+
+    moveHandle.addEventListener('pointerup', finishMove);
+    moveHandle.addEventListener('pointercancel', finishMove);
+    moveHandle.addEventListener('lostpointercapture', finishMove);
+    window.addEventListener('blur', () => finishMove());
+  }
+
   panel.addEventListener('mouseenter', () => window.desktop.pointerInside(true));
   panel.addEventListener('mouseleave', () => window.desktop.pointerInside(false));
   let hideAnimation = null;
@@ -760,25 +826,170 @@ if (isDesktop) {
   document.getElementById('panel').classList.add('show');
 }
 
-// ---------- Today notes (kept for one day, then archived) ----------
+// ---------- Today notes (3 switchable sections; kept for one day, then archived) ----------
 const noteEl = document.getElementById('noteToday');
+const noteTabsEl = document.getElementById('noteTabs');
+const noteTabsShell = document.getElementById('noteTabsShell');
+const noteTabDrawer = document.getElementById('noteTabDrawer');
+const noteTabFullName = document.getElementById('noteTabFullName');
+const noteTabFullNameIndex = document.getElementById('noteTabFullNameIndex');
+const noteTabFullNameText = document.getElementById('noteTabFullNameText');
+let noteTabDrawerOpen = false;
 const notesOverlay = document.getElementById('notesOverlay');
 const notesListEl = document.getElementById('notesList');
+const NOTE_TAB_COUNT = 3;
 
+function noteDefaultTitle(index) {
+  if (index === 0) return t('todayNote');
+  return index === 1 ? t('noteTab2') : t('noteTab3');
+}
+function normalizeNoteTexts(entry) {
+  if (!entry || typeof entry !== 'object') return Array(NOTE_TAB_COUNT).fill('');
+  let texts = Array.isArray(entry.texts) ? entry.texts.slice(0, NOTE_TAB_COUNT) : [];
+  while (texts.length < NOTE_TAB_COUNT) texts.push('');
+  if (!String(texts[0] || '').trim() && typeof entry.text === 'string' && entry.text.trim()) texts[0] = entry.text;
+  entry.texts = texts.map((x) => String(x == null ? '' : x));
+  // Keep the legacy first-column mirror for backward compatibility with older builds/tools.
+  entry.text = entry.texts[0] || '';
+  return entry.texts;
+}
 function ensureNotes() {
-  if (!state.notes || typeof state.notes !== 'object') state.notes = { today: { date: dateKey(new Date()), text: '' }, archive: [] };
-  if (!state.notes.today) state.notes.today = { date: dateKey(new Date()), text: '' };
+  if (!state.notes || typeof state.notes !== 'object') state.notes = {};
+  if (!Array.isArray(state.notes.tabs)) state.notes.tabs = [];
+  while (state.notes.tabs.length < NOTE_TAB_COUNT) state.notes.tabs.push({ name: '' });
+  state.notes.tabs = state.notes.tabs.slice(0, NOTE_TAB_COUNT).map((tab) => ({
+    name: tab && typeof tab.name === 'string' ? tab.name : ''
+  }));
+  let active = Number(state.notes.activeTab);
+  if (!Number.isInteger(active) || active < 0 || active >= NOTE_TAB_COUNT) active = 0;
+  state.notes.activeTab = active;
+
+  if (!state.notes.today || typeof state.notes.today !== 'object') {
+    state.notes.today = { date: dateKey(new Date()), texts: Array(NOTE_TAB_COUNT).fill(''), text: '' };
+  }
+  if (!state.notes.today.date) state.notes.today.date = dateKey(new Date());
+  normalizeNoteTexts(state.notes.today);
+
   if (!Array.isArray(state.notes.archive)) state.notes.archive = [];
+  state.notes.archive = state.notes.archive.filter((a) => a && typeof a === 'object' && a.date);
+  state.notes.archive.forEach(normalizeNoteTexts);
+}
+function noteTabTitle(index) {
+  ensureNotes();
+  const custom = String((state.notes.tabs[index] && state.notes.tabs[index].name) || '').trim();
+  return custom || noteDefaultTitle(index);
+}
+function activeNoteTab() {
+  ensureNotes();
+  return state.notes.activeTab;
+}
+function setActiveNoteTab(index) {
+  ensureNotes();
+  const idx = Math.max(0, Math.min(NOTE_TAB_COUNT - 1, Number(index) || 0));
+  state.notes.activeTab = idx;
+  renderNoteTabs();
+  syncNoteEditor();
+  save();
+}
+function syncNoteEditor() {
+  if (!noteEl) return;
+  ensureNotes();
+  noteEl.value = state.notes.today.texts[activeNoteTab()] || '';
+}
+function setNoteTabDrawer(open) {
+  noteTabDrawerOpen = !!open;
+  if (noteTabDrawer) {
+    noteTabDrawer.classList.toggle('open', noteTabDrawerOpen);
+    noteTabDrawer.setAttribute('aria-hidden', noteTabDrawerOpen ? 'false' : 'true');
+  }
+}
+function toggleNoteTabDrawer(forceOpen) {
+  const next = typeof forceOpen === 'boolean' ? forceOpen : !noteTabDrawerOpen;
+  setNoteTabDrawer(next);
+  renderNoteTabs();
+}
+function commitNoteTabRename(index, input, cancelled) {
+  if (!input || !input.isConnected) return;
+  reportEditing(false);
+  ensureNotes();
+  if (!cancelled) {
+    const value = String(input.value || '').trim();
+    state.notes.tabs[index].name = value === noteDefaultTitle(index) ? '' : value;
+    save();
+  }
+  input.remove();
+  if (noteTabFullName) noteTabFullName.hidden = false;
+  renderNoteTabs();
+  setNoteTabDrawer(true);
+}
+function beginNoteTabRename(index) {
+  if (!noteTabDrawer || noteTabDrawer.querySelector('.note-tab-rename')) return;
+  ensureNotes();
+  setNoteTabDrawer(true);
+  if (noteTabFullName) noteTabFullName.hidden = true;
+
+  const input = document.createElement('input');
+  input.className = 'note-tab-rename';
+  input.type = 'text';
+  input.maxLength = 28;
+  input.value = noteTabTitle(index);
+  input.setAttribute('dir', 'auto');
+  input.setAttribute('aria-label', noteTabTitle(index));
+  noteTabDrawer.appendChild(input);
+  reportEditing(true);
+  requestAnimationFrame(() => { input.focus(); input.select(); });
+
+  let finished = false;
+  const finish = (cancelled) => {
+    if (finished) return;
+    finished = true;
+    commitNoteTabRename(index, input, cancelled);
+  };
+  input.addEventListener('click', (e) => e.stopPropagation());
+  input.addEventListener('pointerdown', (e) => e.stopPropagation());
+  input.addEventListener('blur', () => finish(false));
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); finish(false); }
+    else if (e.key === 'Escape') { e.preventDefault(); finish(true); }
+  });
+}
+function renderNoteTabs() {
+  if (!noteTabsEl) return;
+  ensureNotes();
+  const active = activeNoteTab();
+  noteTabsEl.querySelectorAll('.note-tab').forEach((button) => {
+    const idx = Number(button.dataset.noteTab);
+    button.classList.toggle('active', idx === active);
+    button.setAttribute('aria-selected', idx === active ? 'true' : 'false');
+    button.setAttribute('aria-expanded', idx === active && noteTabDrawerOpen ? 'true' : 'false');
+    button.setAttribute('aria-label', `${idx + 1}: ${noteTabTitle(idx)}`);
+    button.title = noteTabTitle(idx);
+  });
+  if (noteTabFullNameIndex) noteTabFullNameIndex.textContent = String(active + 1);
+  if (noteTabFullNameText) noteTabFullNameText.textContent = noteTabTitle(active);
+  if (noteTabFullName) {
+    noteTabFullName.hidden = !!noteTabDrawer.querySelector('.note-tab-rename');
+    noteTabFullName.title = t('noteTabRename');
+    noteTabFullName.setAttribute('aria-label', `${noteTabTitle(active)} — ${t('noteTabRename')}`);
+  }
 }
 function rolloverNotes() {
   ensureNotes();
   const today = dateKey(new Date());
   if (state.notes.today.date !== today) {
-    if ((state.notes.today.text || '').trim()) state.notes.archive.unshift({ date: state.notes.today.date, text: state.notes.today.text });
-    state.notes.today = { date: today, text: '' };
+    const texts = normalizeNoteTexts(state.notes.today).slice();
+    if (texts.some((x) => String(x || '').trim())) {
+      state.notes.archive.unshift({ date: state.notes.today.date, texts, text: texts[0] || '' });
+    }
+    state.notes.today = { date: today, texts: Array(NOTE_TAB_COUNT).fill(''), text: '' };
   }
 }
-function refreshNotes() { ensureNotes(); rolloverNotes(); if (noteEl) noteEl.value = state.notes.today.text || ''; }
+function refreshNotes() {
+  ensureNotes();
+  rolloverNotes();
+  renderNoteTabs();
+  syncNoteEditor();
+}
 function dayActivityForNotes(key) {
   ensureProductivityState(state);
   const result = { habits: [], works: [] };
@@ -807,13 +1018,17 @@ function activityLine(label, entries) {
   });
   return line;
 }
+function noteEntryHasText(note) {
+  if (!note) return false;
+  return normalizeNoteTexts(note).some((x) => String(x || '').trim());
+}
 function renderNotesList() {
   ensureNotes(); ensureProductivityState(state);
   notesListEl.innerHTML = '';
 
   const notesByDate = new Map();
-  notesByDate.set(state.notes.today.date, { key: 'today', text: state.notes.today.text || '' });
-  state.notes.archive.forEach((a, i) => { if (a && a.date) notesByDate.set(a.date, { key: 'arch', idx: i, text: a.text || '' }); });
+  notesByDate.set(state.notes.today.date, { key: 'today', entry: state.notes.today });
+  state.notes.archive.forEach((a, i) => { if (a && a.date) notesByDate.set(a.date, { key: 'arch', idx: i, entry: a }); });
 
   const dates = new Set(notesByDate.keys());
   Object.keys(state.habits.records || {}).forEach((k) => dates.add(k));
@@ -822,7 +1037,7 @@ function renderNotesList() {
   const visible = ordered.filter((key) => {
     const note = notesByDate.get(key);
     const act = dayActivityForNotes(key);
-    return !!((note && String(note.text || '').trim()) || hasDayActivity(act));
+    return !!((note && noteEntryHasText(note.entry)) || hasDayActivity(act));
   });
 
   if (!visible.length) {
@@ -835,15 +1050,20 @@ function renderNotesList() {
     const d = document.createElement('div'); d.className = 'note-item';
     const dt = document.createElement('div'); dt.className = 'ni-date';
     const dlabel = document.createElement('span');
-    dlabel.textContent = displayDateOfKey(key) + (key === dateKey(new Date()) ? `  (${t('todaySuffix')})` : '') + (note ? '  ✎' : '');
+    dlabel.textContent = displayDateOfKey(key) + (key === dateKey(new Date()) ? `  (${t('todaySuffix')})` : '') + (note && noteEntryHasText(note.entry) ? '  ✎' : '');
     dt.appendChild(dlabel);
 
-    if (note && String(note.text || '').trim()) {
+    if (note && noteEntryHasText(note.entry)) {
       const ndel = document.createElement('button'); ndel.className = 'ni-del'; ndel.title = t('deleteDay'); ndel.textContent = '🗑';
       ndel.addEventListener('click', () => {
         if (!confirm(t('deleteDayConfirm'))) return;
-        if (note.key === 'today') { state.notes.today.text = ''; if (noteEl) noteEl.value = ''; }
-        else if (state.notes.archive[note.idx]) { state.notes.archive.splice(note.idx, 1); }
+        if (note.key === 'today') {
+          state.notes.today.texts = Array(NOTE_TAB_COUNT).fill('');
+          state.notes.today.text = '';
+          syncNoteEditor();
+        } else if (state.notes.archive[note.idx]) {
+          state.notes.archive.splice(note.idx, 1);
+        }
         save(); renderNotesList();
       });
       dt.appendChild(ndel);
@@ -851,18 +1071,31 @@ function renderNotesList() {
     d.appendChild(dt);
 
     if (note) {
-      const tx = document.createElement('div'); tx.className = 'ni-text'; tx.contentEditable = 'true'; tx.spellcheck = false;
-      tx.setAttribute('dir', 'auto'); tx.textContent = note.text || '';
-      tx.addEventListener('focus', () => reportEditing(true));
-      const saveArchivedNote = () => {
-        const val = tx.innerText.replace(/\u00a0/g, ' ');
-        if (note.key === 'today') { state.notes.today.text = val; if (noteEl) noteEl.value = val; }
-        else if (state.notes.archive[note.idx]) { state.notes.archive[note.idx].text = val; }
-        save();
-      };
-      tx.addEventListener('input', saveArchivedNote);
-      tx.addEventListener('blur', () => { reportEditing(false); saveArchivedNote(); });
-      d.appendChild(tx);
+      const texts = normalizeNoteTexts(note.entry);
+      texts.forEach((rawText, tabIndex) => {
+        if (!String(rawText || '').trim()) return;
+        const section = document.createElement('div'); section.className = 'ni-note-section';
+        const sectionLabel = document.createElement('div'); sectionLabel.className = 'ni-note-section-title';
+        sectionLabel.textContent = noteTabTitle(tabIndex);
+        const tx = document.createElement('div'); tx.className = 'ni-text'; tx.contentEditable = 'true'; tx.spellcheck = false;
+        tx.setAttribute('dir', 'auto'); tx.textContent = rawText || '';
+        tx.addEventListener('focus', () => reportEditing(true));
+        const saveArchivedNote = () => {
+          const val = tx.innerText.replace(/\u00a0/g, ' ');
+          const target = note.key === 'today' ? state.notes.today : state.notes.archive[note.idx];
+          if (target) {
+            normalizeNoteTexts(target);
+            target.texts[tabIndex] = val;
+            target.text = target.texts[0] || '';
+            if (note.key === 'today' && activeNoteTab() === tabIndex && noteEl) noteEl.value = val;
+          }
+          save();
+        };
+        tx.addEventListener('input', saveArchivedNote);
+        tx.addEventListener('blur', () => { reportEditing(false); saveArchivedNote(); });
+        section.append(sectionLabel, tx);
+        d.appendChild(section);
+      });
     }
 
     if (hasDayActivity(act)) {
@@ -875,11 +1108,35 @@ function renderNotesList() {
     notesListEl.appendChild(d);
   }
 }
+if (noteTabsEl) {
+  noteTabsEl.addEventListener('click', (e) => {
+    const button = e.target.closest('.note-tab');
+    if (!button || !noteTabsEl.contains(button)) return;
+    const idx = Number(button.dataset.noteTab);
+    if (!Number.isInteger(idx)) return;
+    const wasActive = activeNoteTab() === idx;
+    if (!wasActive) setActiveNoteTab(idx);
+    // Every numbered tab opens the drawer; clicking the already-open active tab toggles it closed.
+    toggleNoteTabDrawer(wasActive ? !noteTabDrawerOpen : true);
+  });
+}
+if (noteTabFullName) {
+  noteTabFullName.addEventListener('click', () => beginNoteTabRename(activeNoteTab()));
+}
 if (noteEl) {
   noteEl.addEventListener('focus', () => reportEditing(true));
-  noteEl.addEventListener('blur', () => { reportEditing(false); ensureNotes(); state.notes.today.text = noteEl.value; save(); });
+  noteEl.addEventListener('blur', () => {
+    reportEditing(false); ensureNotes();
+    const idx = activeNoteTab();
+    state.notes.today.texts[idx] = noteEl.value;
+    state.notes.today.text = state.notes.today.texts[0] || '';
+    save();
+  });
   noteEl.addEventListener('input', () => {
-    ensureNotes(); state.notes.today.text = noteEl.value;
+    ensureNotes();
+    const idx = activeNoteTab();
+    state.notes.today.texts[idx] = noteEl.value;
+    state.notes.today.text = state.notes.today.texts[0] || '';
     save();
   });
 }
@@ -1263,9 +1520,9 @@ function renderReminders() {
     const info = document.createElement('div'); info.className = 'rem-info';
     const dt = document.createElement('div'); dt.className = 'rem-when';
     dt.textContent = jalaliLong(d) + ' — ' + faNum(String(d.getHours()).padStart(2, '0')) + ':' + faNum(String(d.getMinutes()).padStart(2, '0'));
-    if (r.repeat === 'weekly' || r.repeat === 'monthly') {
+    if (r.repeat === 'daily' || r.repeat === 'weekly' || r.repeat === 'monthly') {
       const badge = document.createElement('span'); badge.className = 'rem-badge ' + r.repeat;
-      badge.textContent = r.repeat === 'weekly' ? t('weeklyBadge') : t('monthlyBadge'); dt.appendChild(badge);
+      badge.textContent = r.repeat === 'daily' ? t('dailyBadge') : (r.repeat === 'weekly' ? t('weeklyBadge') : t('monthlyBadge')); dt.appendChild(badge);
     }
     const tx = document.createElement('div'); tx.className = 'rem-txt'; tx.textContent = r.text || t('noText');
     info.append(dt, tx);
@@ -1316,7 +1573,8 @@ setInterval(() => {
   for (const r of state.reminders) {
     if (!r.fired && now >= r.ts) {
       fireAlarm(r); changed = true;
-      if (r.repeat === 'weekly') { do { r.ts += 7 * 864e5; } while (r.ts <= now); }
+      if (r.repeat === 'daily') { const d = new Date(r.ts); do { d.setDate(d.getDate() + 1); } while (d.getTime() <= now); r.ts = d.getTime(); }
+      else if (r.repeat === 'weekly') { do { r.ts += 7 * 864e5; } while (r.ts <= now); }
       else if (r.repeat === 'monthly') { const d = new Date(r.ts); do { d.setMonth(d.getMonth() + 1); } while (d.getTime() <= now); r.ts = d.getTime(); }
       else { r.fired = true; }
     }
@@ -1362,7 +1620,7 @@ async function restoreFromMemory() {
         state = normalizeState(selected);
         ensureNotes();
         nextId = Math.max(0, ...state.timers.map(t => t.id)) + 1;
-        try { setAlert.checked = !!state.settings.alertOnFinish; } catch (_) {}
+        try { setAlert.checked = !!state.settings.alertOnFinish; setHover.checked = state.settings.revealOnHover === true; } catch (_) {}
         try { if (languageSelect) languageSelect.value = currentLang(); } catch (_) {}
         try { if (calendarSelect) calendarSelect.value = currentCalendarMode(); } catch (_) {}
         try { if (themeSelect) themeSelect.value = currentTheme(); } catch (_) {}

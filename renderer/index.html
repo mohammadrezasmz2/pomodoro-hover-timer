@@ -20,6 +20,9 @@
         <button class="tool" id="remindBtn" title="یادآور" data-i18n-title="toolReminder">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
         </button>
+        <div class="tool move-handle" id="moveHandle" role="button" tabindex="-1" title="جابجایی پنجره به چپ و راست" data-i18n-title="toolMove" aria-label="Move window left or right">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8 3 12l4 4"/><path d="M3 12h18"/><path d="m17 8 4 4-4 4"/></svg>
+        </div>
         <button class="tool" id="statsBtn" title="آمار و تقویم" data-i18n-title="toolStats">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
         </button>
@@ -36,6 +39,11 @@
     </header>
 
     <div class="settings-pop" id="settingsPop">
+      <div class="set-row">
+        <span id="hoverLabel" data-i18n="revealOnHover">نمایش با بردن موس به بالای صفحه</span>
+        <label class="switch"><input type="checkbox" id="setHover" aria-labelledby="hoverLabel" aria-describedby="hoverHint"><span class="slider"></span></label>
+      </div>
+      <div class="set-hint" id="hoverHint" data-i18n="manualOpenHint">پیش‌فرض خاموش است؛ پنل را از آیکن کنار ساعت، منوی Start یا میان‌بر باز کنید.</div>
       <div class="set-row">
         <span data-i18n="alertOnFinish">نمایش پنجره هنگام پایان تایمر</span>
         <label class="switch"><input type="checkbox" id="setAlert"><span class="slider"></span></label>
@@ -69,7 +77,20 @@
 
     <div class="body">
       <aside class="side notes-col">
-        <div class="col-title" data-i18n="todayNote">یادداشت امروز</div>
+        <div class="note-tabs-shell" id="noteTabsShell">
+          <div class="note-tabs" id="noteTabs" role="tablist" aria-label="Note sections">
+            <button class="note-tab active" type="button" data-note-tab="0" aria-label="Note 1"><span class="note-tab-number">1</span></button>
+            <button class="note-tab" type="button" data-note-tab="1" aria-label="Note 2"><span class="note-tab-number">2</span></button>
+            <button class="note-tab" type="button" data-note-tab="2" aria-label="Note 3"><span class="note-tab-number">3</span></button>
+          </div>
+          <div class="note-tab-drawer" id="noteTabDrawer" aria-hidden="true">
+            <button class="note-tab-fullname" id="noteTabFullName" type="button" title="Rename note section">
+              <span class="note-tab-fullname-index" id="noteTabFullNameIndex">1</span>
+              <span class="note-tab-fullname-text" id="noteTabFullNameText"></span>
+              <span class="note-tab-fullname-edit">✎</span>
+            </button>
+          </div>
+        </div>
         <textarea class="note-area" id="noteToday" placeholder="امروز روی چی کار کردی؟ اینجا بنویس…" data-i18n-placeholder="notePlaceholder"></textarea>
         <button class="ghost-btn" id="prevNotesBtn" data-i18n="previousNotes">🗒️ یادداشت‌های روزهای قبل</button>
       </aside>
@@ -211,6 +232,7 @@
                 <label data-i18n="repeatLabel">تکرار:</label>
                 <select id="remRepeat" class="rem-in rem-sel">
                   <option value="none" data-i18n="repeatNone">بدون تکرار</option>
+                  <option value="daily" data-i18n="repeatDaily">هر روز</option>
                   <option value="weekly" data-i18n="repeatWeekly">هر هفته</option>
                   <option value="monthly" data-i18n="repeatMonthly">هر ماه</option>
                 </select>
@@ -242,7 +264,7 @@
           <button class="notes-close" id="aboutClose" data-i18n="close">بستن</button>
         </div>
         <div class="about-body">
-          <div class="about-app">Pomodoro Timing <span class="about-version">v1.6.7</span></div>
+          <div class="about-app">Pomodoro Timing <span class="about-version">v1.7.4</span></div>
           <div class="about-row"><span data-i18n="developer">سازنده</span><strong>MR.Senobari</strong></div>
           <div class="about-row"><span data-i18n="email">ایمیل</span><strong dir="ltr">mohammadrezasm2@gmail.com</strong></div>
         </div>

@@ -54,11 +54,25 @@ body.preview{
 .tool svg[fill="none"]{ fill:none; stroke:currentColor; }
 .tool:hover{ background:rgba(255,255,255,.07); color:#fff; }
 .tool.active{ color:#7cc4ff; background:rgba(124,196,255,.12); }
+/* Horizontal window mover (v1.6.9): custom drag handled through IPC.
+   Do NOT use -webkit-app-region:drag here: native frameless dragging lets
+   Windows move the panel vertically first, which caused the top-edge jump/flicker. */
+.move-handle{
+  -webkit-app-region:no-drag;
+  cursor:ew-resize;
+  touch-action:none;
+}
+.move-handle:hover,
+.move-handle.dragging{ background:rgba(124,196,255,.16); color:#7cc4ff; }
+.move-handle.dragging{ box-shadow:inset 0 -2px 0 rgba(124,196,255,.65); }
+.move-handle svg{ pointer-events:none; }
 #closeBtn:hover{ background:rgba(255,80,80,.18); color:#ff8a8a; }
 
 /* ===================== Settings popover ===================== */
 .settings-pop{
-  position:absolute; top:42px; right:12px; width:240px; z-index:40;
+  position:absolute; top:42px; right:12px; width:320px; z-index:40;
+  max-width:calc(100vw - 45px); max-height:calc(100vh - 72px);
+  overflow-y:auto; overscroll-behavior:contain;
   background:#0e1626; border:1px solid rgba(255,255,255,.09);
   border-radius:12px; padding:10px 12px;
   box-shadow:0 14px 34px rgba(0,0,0,.5);
@@ -261,6 +275,7 @@ body.preview{
 .rem-chip:hover{ background:rgba(55,214,122,.16); border-color:rgba(55,214,122,.4); color:#fff; }
 .rem-sel{ width:auto; padding:6px 8px; }
 .rem-badge{ font-size:10px; font-weight:800; padding:1px 7px; border-radius:999px; margin-inline-start:6px; }
+.rem-badge.daily{ color:#ffd36e; background:rgba(255,193,77,.16); }
 .rem-badge.weekly{ color:#8ef0b6; background:rgba(55,214,122,.16); }
 .rem-badge.monthly{ color:#7cc4ff; background:rgba(56,182,255,.16); }
 
@@ -821,4 +836,246 @@ body.lang-fa #weekView .week-empty{
   align-self:flex-start;
   justify-self:stretch;
   padding-inline:2px;
+}
+
+
+/* ===================== v1.7.1 — compact numbered note tabs + readable drawer ===================== */
+.note-tabs-shell{
+  flex:0 0 auto;
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  min-width:0;
+}
+.note-tabs{
+  flex:0 0 auto;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:5px;
+  padding:4px;
+  background:#0b1120;
+  border:1px solid var(--card-line);
+  border-radius:10px;
+  direction:ltr;
+}
+.note-tab{
+  min-width:0;
+  height:36px;
+  padding:0;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:#9aa7ba;
+  font-family:inherit;
+  font-size:14px;
+  font-weight:900;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+  line-height:1;
+}
+.note-tab:hover{
+  color:#f3f7fd;
+  background:rgba(255,255,255,.06);
+}
+.note-tab.active{
+  color:#eef7ff;
+  background:rgba(124,196,255,.14);
+  box-shadow:inset 0 0 0 1px rgba(124,196,255,.34);
+}
+.note-tab-number{
+  display:block;
+  min-width:1em;
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+.note-tab-drawer{
+  overflow:hidden;
+  max-height:0;
+  opacity:0;
+  transform:translateY(-3px);
+  transition:max-height .16s ease, opacity .14s ease, transform .16s ease, margin-top .16s ease;
+  margin-top:0;
+}
+.note-tab-drawer.open{
+  max-height:52px;
+  opacity:1;
+  transform:translateY(0);
+  margin-top:6px;
+}
+.note-tab-fullname{
+  width:100%;
+  min-width:0;
+  min-height:42px;
+  padding:7px 10px;
+  border:1px solid rgba(124,196,255,.24);
+  border-radius:9px;
+  background:rgba(124,196,255,.07);
+  color:#eef5ff;
+  font-family:inherit;
+  cursor:pointer;
+  display:grid;
+  grid-template-columns:24px minmax(0,1fr) 18px;
+  align-items:center;
+  gap:7px;
+  text-align:start;
+}
+.note-tab-fullname:hover{
+  background:rgba(124,196,255,.11);
+  border-color:rgba(124,196,255,.38);
+}
+.note-tab-fullname-index{
+  width:24px;
+  height:24px;
+  border-radius:7px;
+  display:grid;
+  place-items:center;
+  background:rgba(124,196,255,.13);
+  color:#bfe5ff;
+  font-size:11px;
+  font-weight:900;
+}
+.note-tab-fullname-text{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:13px;
+  font-weight:800;
+  line-height:1.25;
+  unicode-bidi:plaintext;
+}
+.note-tab-fullname-edit{
+  font-size:12px;
+  opacity:.72;
+  line-height:1;
+}
+body.lang-fa .note-tab-fullname-text{ direction:rtl; text-align:right; }
+body.lang-en .note-tab-fullname-text{ direction:ltr; text-align:left; }
+.note-tab-rename{
+  width:100%;
+  min-width:0;
+  height:42px;
+  box-sizing:border-box;
+  padding:7px 10px;
+  border:1px solid rgba(124,196,255,.48);
+  border-radius:9px;
+  outline:none;
+  background:#0b1120;
+  color:#eef5ff;
+  font-family:inherit;
+  font-size:13px;
+  font-weight:800;
+  line-height:1.25;
+  text-align:start;
+}
+.note-tab-rename:focus{ box-shadow:0 0 0 1px rgba(124,196,255,.25); }
+body.lang-fa .note-tab-rename{ direction:rtl; text-align:right; }
+body.lang-en .note-tab-rename{ direction:ltr; text-align:left; }
+
+/* Each archived day may contain up to three independently editable note sections. */
+.ni-note-section{
+  margin-top:7px;
+  padding-top:7px;
+  border-top:1px dashed rgba(255,255,255,.07);
+}
+.ni-note-section:first-of-type{
+  margin-top:2px;
+  padding-top:2px;
+  border-top:0;
+}
+.ni-note-section-title{
+  margin-bottom:3px;
+  color:#7cc4ff;
+  font-size:10px;
+  font-weight:800;
+  unicode-bidi:plaintext;
+}
+body.lang-fa .ni-note-section-title{ direction:rtl; text-align:right; }
+body.lang-en .ni-note-section-title{ direction:ltr; text-align:left; }
+
+body.theme-light .note-tabs,
+body.theme-light .note-tab-rename{
+  background:#fff;
+  border-color:rgba(15,23,42,.14);
+}
+body.theme-light .note-tab{ color:#67768a; }
+body.theme-light .note-tab:hover{ color:#172033; background:rgba(15,23,42,.05); }
+body.theme-light .note-tab.active{
+  color:#174e70;
+  background:rgba(56,182,255,.13);
+  box-shadow:inset 0 0 0 1px rgba(25,118,168,.18);
+}
+body.theme-light .note-tab-fullname{
+  background:rgba(56,182,255,.08);
+  border-color:rgba(25,118,168,.2);
+  color:#172033;
+}
+body.theme-light .note-tab-fullname:hover{ background:rgba(56,182,255,.13); border-color:rgba(25,118,168,.32); }
+body.theme-light .note-tab-fullname-index{ background:rgba(25,118,168,.1); color:#174e70; }
+body.theme-light .note-tab-rename{ color:#172033; }
+body.theme-light .ni-note-section{ border-color:rgba(15,23,42,.09); }
+body.theme-light .ni-note-section-title{ color:#1976a8; }
+
+
+/* ===================== v1.7.2 — bounded notes column + note editor scrolling ===================== */
+/* The note tabs/drawer stay at the top and Previous Notes stays pinned at the
+   bottom. Opening the note-name drawer now shrinks only the editor area instead
+   of pushing the bottom button outside the fixed 300px application shell. */
+.notes-col{
+  display:grid !important;
+  grid-template-rows:auto minmax(0,1fr) auto;
+  align-content:stretch;
+  gap:10px;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+.notes-col .note-tabs-shell{
+  min-height:0;
+  flex:none;
+}
+.notes-col .note-area{
+  min-height:0 !important;
+  height:100% !important;
+  max-height:100% !important;
+  width:100%;
+  box-sizing:border-box;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+.notes-col #prevNotesBtn{
+  min-height:38px;
+  flex:none;
+  align-self:stretch;
+}
+.notes-col .note-area::-webkit-scrollbar{ width:8px; }
+.notes-col .note-area::-webkit-scrollbar-track{
+  background:rgba(255,255,255,.025);
+  border-radius:8px;
+}
+.notes-col .note-area::-webkit-scrollbar-thumb{
+  background:rgba(151,166,190,.34);
+  border:2px solid transparent;
+  background-clip:padding-box;
+  border-radius:8px;
+}
+.notes-col .note-area::-webkit-scrollbar-thumb:hover{
+  background:rgba(176,192,216,.55);
+  background-clip:padding-box;
+}
+body.theme-light .notes-col .note-area::-webkit-scrollbar-track{
+  background:rgba(15,23,42,.05);
+}
+body.theme-light .notes-col .note-area::-webkit-scrollbar-thumb{
+  background:rgba(15,23,42,.25);
+  background-clip:padding-box;
+}
+
+/* Persian tracker title inputs: keep placeholder and entered text RTL/right-aligned. */
+body.lang-fa #habitInput,
+body.lang-fa #todoInput{
+  direction:rtl;
+  text-align:right;
 }
