@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on Keep a Changelog principles, and the project uses
 Semantic Versioning for release tags.
 
+## [1.7.4] - 2026-09-28
+
+### Added
+
+- Import the author-supplied 1.7.3 update: three named note tabs, per-tab text backups, bounded note scrolling, daily repeating reminders, improved Jalali reminder dates and horizontal window positioning.
+- Add a Persian/English Settings switch for top-center hover. It is off for both fresh installs and upgrades unless explicitly enabled; tray, Start-menu and shortcut access remain available.
+
+### Fixed
+
+- Retain atomic saves, backup recovery, immediate note/title persistence, deadline-based timers, sandboxed IPC and stale-hide protection from the published version.
+- Clamp horizontal movement to the active monitor and restore the selected position after restart.
+- Save per-tab exports atomically and avoid replacing unrelated files that share a note title.
+- Update the Windows installer help and user guide to describe manual opening.
+
 ## [1.6.7] - 2026-09-22
 
 ### Changed

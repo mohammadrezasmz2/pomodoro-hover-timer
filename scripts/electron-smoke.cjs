@@ -24,6 +24,10 @@ app.on('will-quit', () => {
     const saved = JSON.parse(fs.readFileSync(dataFile, 'utf8'));
     assert.equal(saved.timers[0].title, 'Smoke title saved immediately');
     assert.equal(saved.notes.today.text, 'یادداشت ذخیرهٔ سریع');
+    assert.equal(saved.notes.today.texts[1], 'Second section persists');
+    assert.equal(saved.notes.today.texts[2], 'Third section persists');
+    assert.equal(saved.notes.tabs[1].name, 'Research');
+    assert.equal(saved.settings.revealOnHover, false);
     assert.equal(errors.length, 0, errors.join('\n'));
     console.log(`PASS Electron ${process.versions.electron}: ${phase}, IPC, CSP, responsive layout and quit persistence`);
   } catch (e) { console.error(e); app.exit(1); }
@@ -51,7 +55,35 @@ app.on('browser-window-created', (_event, win) => {
       if (phase === 'restore') {
         assert.equal(await run('state.timers[0].title'), 'Smoke title saved immediately');
         assert.equal(await run('state.notes.today.text'), 'یادداشت ذخیرهٔ سریع');
+        assert.equal(await run('state.notes.today.texts[1]'), 'Second section persists');
+        assert.equal(await run('state.notes.today.texts[2]'), 'Third section persists');
+        assert.equal(await run('state.notes.tabs[1].name'), 'Research');
       }
+      assert.equal(await run('document.getElementById("setHover").checked'), false);
+      assert.equal(await run('state.settings.revealOnHover'), false);
+      for (const enabled of [true, false]) {
+        await run(`setHover.checked = ${enabled}; setHover.dispatchEvent(new Event('change'));`);
+        assert.equal(await run('(async () => (await window.desktop.getState()).settings.revealOnHover)()'), enabled);
+      }
+      assert.equal(await run('typeof window.desktop.startHorizontalDrag'), 'function');
+      // Exercise all three note editors and rename through actual DOM events.
+      await run(`
+        document.querySelector('[data-note-tab="1"]').click();
+        noteEl.value = 'Second section persists'; noteEl.dispatchEvent(new Event('input'));
+        document.getElementById('noteTabFullName').click();
+        const rename = document.querySelector('.note-tab-rename');
+        rename.value = 'Research'; rename.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter'}));
+        document.querySelector('[data-note-tab="2"]').click();
+        noteEl.value = 'Third section persists'; noteEl.dispatchEvent(new Event('input'));
+      `);
+      assert.equal(await run('state.notes.today.texts[1]'), 'Second section persists');
+      assert.equal(await run('state.notes.tabs[1].name'), 'Research');
+      assert(await run(`(() => {
+        const now = new Date(); const j = toJalali(now);
+        const converted = jalaliToDate(j.jy, j.jm, j.jd, 9, 30);
+        return dateKey(converted) === dateKey(now) && converted.getHours() === 9 && converted.getMinutes() === 30;
+      })()`));
+      assert(await run('!!document.querySelector("#remRepeat option[value=daily]")'));
       await run("state.settings.language='en'; state.settings.theme='light'; refreshLocalizedUI(); document.getElementById('statsBtn').click();");
       assert.equal(await run('statsDockOpen'), true);
       console.log('Statistics dock opened');
@@ -85,8 +117,13 @@ app.on('browser-window-created', (_event, win) => {
         await run("state.settings.theme='dark'; state.settings.language='fa'; refreshLocalizedUI(); setStatsDock(false);");
         await new Promise(resolve => setTimeout(resolve, 300));
         fs.writeFileSync(path.join(output, 'panel-persian.png'), (await win.capturePage()).toPNG());
+        await run("document.getElementById('gearBtn').click()");
+        await new Promise(resolve => setTimeout(resolve, 300));
+        assert(await run("document.getElementById('settingsPop').getBoundingClientRect().bottom <= innerHeight"));
+        fs.writeFileSync(path.join(output, 'settings-manual-opening.png'), (await win.capturePage()).toPNG());
+        await run("document.getElementById('gearBtn').click()");
       }
-      await run('setStatsDock(false)');
+      await run('setStatsDock(false); setActiveNoteTab(0);');
       // Trigger input rather than blur; then quit before the 700ms debounce.
       await run("(() => { const title=document.querySelector('.js-title'); title.textContent='Smoke title saved immediately'; title.dispatchEvent(new Event('input')); const note=document.getElementById('noteToday'); note.value='یادداشت ذخیرهٔ سریع'; note.dispatchEvent(new Event('input')); })()");
       assertionsFinished = true;

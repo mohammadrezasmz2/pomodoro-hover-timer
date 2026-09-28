@@ -9,9 +9,9 @@ and calendar/statistics views.
 
 ## Download for Windows
 
-**[Download v1.6.7 — Windows x64](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.7/Pomodoro-Timing-1.6.7-Windows-x64.zip)**
+**[Download v1.7.4 — Windows x64](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.7.4/Pomodoro-Timing-1.7.4-Windows-x64.zip)**
 
-[Release notes](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/tag/v1.6.7) · [SHA-256 checksum](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.6.7/Pomodoro-Timing-1.6.7-Windows-x64.zip.sha256)
+[Release notes](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/tag/v1.7.4) · [SHA-256 checksum](https://github.com/mohammadrezasmz2/pomodoro-hover-timer/releases/download/v1.7.4/Pomodoro-Timing-1.7.4-Windows-x64.zip.sha256)
 
 1. Download the portable ZIP and extract **all** its contents into a folder.
 2. Open `Run.bat` to start the app.
@@ -23,7 +23,10 @@ to run it. The **Source code** archives on the release page are for development.
 ## Features
 
 - Multiple Pomodoro timers with editable duration, goal, progress, and task name
-- Top-center hover access on every monitor
+- Manual opening from the tray icon, Windows Start menu or `Ctrl+Alt+P`
+- Optional top-center hover in Settings (off by default), with multi-monitor support
+- Three named note tabs with separate text backups and daily repeating reminders
+- Horizontal window positioning with the ↔ handle, restored after restart
 - Quick show/hide shortcut: `Ctrl + Alt + P`
 - System-tray operation and optional Windows autostart
 - Daily notes saved locally in the user's Documents folder
@@ -92,7 +95,7 @@ ZIP plus SHA-256 checksum to `dist/`.
 - **CI** checks the repository on pushes and pull requests.
 - **CodeQL** performs JavaScript security analysis.
 - **Windows Build / Release** creates a portable Windows ZIP. A tag such as
-  `v1.6.7` also creates a GitHub Release and attaches the ZIP and checksum.
+  `v1.7.4` also creates a GitHub Release and attaches the ZIP and checksum.
 - **Dependabot** checks the Electron development dependency and GitHub Actions.
 
 ## Data and privacy

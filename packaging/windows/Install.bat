@@ -30,8 +30,9 @@ echo    - You can safely CLOSE this window; the app keeps running.
 echo    - The tomato tray icon may be hidden under the small
 echo      up-arrow at the bottom-right. Drag it out to keep it visible.
 echo    - It also starts automatically with Windows.
-echo    Show the panel anytime: move the mouse to the TOP-CENTER
-echo    of the screen, or press  Ctrl + Alt + P.
+echo    Show the panel: click the tomato tray icon, open Start,
+echo    or press Ctrl + Alt + P. Top-edge hover is OFF by default.
+echo    You can enable it in Settings if you want.
 echo    (To run it later without this window, use the Desktop shortcut.)
 echo ============================================
 echo.
