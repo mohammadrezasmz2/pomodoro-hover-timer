@@ -18,6 +18,6 @@
     "build:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-portable.ps1"
   },
   "devDependencies": {
-    "electron": "44.4.3"
+    "electron": "44.4.5"
   }
 }
